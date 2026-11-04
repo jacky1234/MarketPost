@@ -6,6 +6,7 @@
 - GET /v1/feed/{id}：返回完整信封；不存在 404。
 - GET /v1/agents?trading_day=YYYY-MM-DD：当天出现过的 agent 与条数，缺日期时汇总历史。响应 {agents:[{from,count}]}。
 - GET /v1/watchlist：共享 active 关注池，不返回 lots/成本；不是 P2 的基础 reader 投影。
+- GET /v1/watchlist/{symbol}：owner 本轮授权的只读标的详情扩展，响应 {item,lots}；仅 active 标的，未知/停用 404；lots 按标的隔离、NULL 原样保留。与其他人类本地读接口一样，带 Authorization 的请求拒绝。部署后须由 Access 保护；P2 reader 不获 lots。
 - GET /v1/events?from=YYYY-MM-DD&to=YYYY-MM-DD：按 event_date 闭区间；响应 {items}，按事件日和 id 排序。
 - GET /v1/alert-rules：共享规则登记，响应 {items}；condition_json 解码为 condition，不执行条件、不更新规则。
 - GET /v1/health/producers?trading_day=YYYY-MM-DD&from=agent：已知 producer 的最近 heartbeat。响应 {reference_at,max_age_seconds,producers}；每项含 from/producer/state/last_heartbeat_at/last_published_at/age_seconds/note。state 为 fresh/stale/missing/failed/skipped/unknown。默认超时 86400 秒，非敏感环境变量 HEARTBEAT_MAX_AGE_SECONDS 可覆盖。历史日使用上海当日结束时间与当前时间的较早值。没有投递过的任务无法判断。
@@ -14,7 +15,7 @@
 
 日期以 trading_day 过滤，绝不拿 published_at 日期代替交易日。分页不保证插入过程中的快照隔离。共享表不具有 agent 归属，界面单独标注；feed/heartbeat 按日期与 agent 真实过滤。
 
-看板正文以 Markdown 原文安全展示，不执行 HTML；来源仅放行 http/https 链接，所有生产者文本按 textContent 渲染。详情的观点对照限当前已加载同日同标的其他 agent 内容。持仓页不提供分笔成本接口；技术面展示生产者已计算字段与信号，完整 K 线图仍待后续实现。
+看板正文以 Markdown 原文安全展示，不执行 HTML；来源仅放行 http/https 链接，所有生产者文本按 textContent 渲染。详情的观点对照限当前已加载同日同标的其他 agent 内容。持仓页通过只读标的详情弹层展示当前登记分笔（不是历史日或 agent 归属数据）；技术面展示生产者已计算字段与信号，完整 K 线图仍待后续实现。
 
 ## 本地虚构数据验收
 

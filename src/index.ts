@@ -30,6 +30,14 @@ async function route(request: Request, env: Env): Promise<Response> {
     return json({agents:rows.results});
   }
   if (path === '/v1/watchlist' && method === 'GET') return json({items:(await env.DB.prepare('SELECT symbol, market, name, tier, currency, proxy_symbol, thesis, active, sort_order, created_at, updated_at FROM watchlist WHERE active = 1 ORDER BY sort_order, symbol').all()).results});
+  // Owner 授权的标的详情；沿用人类本地读路径，Authorization 拒绝已在上方执行。
+  if (method === 'GET' && /^\/v1\/watchlist\/[^/]+$/.test(path)) {
+    let symbol: string; try {symbol=decodeURIComponent(path.slice('/v1/watchlist/'.length));} catch {throw new QueryError('无效 symbol');}
+    const item=await env.DB.prepare('SELECT symbol, market, name, tier, currency, proxy_symbol, thesis FROM watchlist WHERE symbol = ? AND active = 1').bind(symbol).first();
+    if (!item) return json({error:'Not found'},404);
+    const lots=(await env.DB.prepare('SELECT lot_id, symbol, shares, cost, note, alert_rule FROM watchlist_lots WHERE symbol = ? ORDER BY lot_id').bind(symbol).all()).results;
+    return json({item,lots});
+  }
   if (method === 'GET' && /^\/v1\/feed\/[^/]+$/.test(path)) {
     let id: string; try { id=decodeURIComponent(path.slice('/v1/feed/'.length)); } catch {throw new QueryError('无效 id');}
     const row=await env.DB.prepare('SELECT * FROM feed_items WHERE id = ?').bind(id).first();

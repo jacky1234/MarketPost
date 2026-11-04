@@ -1,0 +1,18 @@
+{
+  "viewport": "390×844",
+  "dialog": {
+    "x": 19,
+    "y": 84.359375,
+    "width": 352,
+    "height": 675.265625
+  },
+  "overflow": false,
+  "checks": [
+    "两笔虚构持仓",
+    "空lots",
+    "NULL显示未录入",
+    "失败重试",
+    "关闭与重开"
+  ],
+  "pageErrors": []
+}

@@ -39,7 +39,7 @@ lint 使用 TypeScript 严格类型检查。测试框架使用 Node 内建 node:
 
 实现 POST /v1/feed，以及 P1 GET feed 列表/详情、agents、watchlist、events、alert-rules、health/producers。feed 支持 from/type/symbol/trading_day/q/limit/cursor。接口响应与分页约定见 [API.md](docs/API.md)。commands 和 watchlist 写接口仍返回 501。
 
-七 Tab 已接本地查询：动态 agent 及条数、日期与关键词、时间流类型/标的筛选、详情与独立观点区、持仓共享档案与已投递价格、技术面、事件、提醒。unretrieved/partial/heartbeat 断供独立展示。指令未启用；不抓行情、不计算指标、不展示分笔成本。完整 K 线与完整 §6 交互未在本次实现。
+七 Tab 已接本地查询：动态 agent 及条数、日期与关键词、时间流类型/标的筛选、详情与独立观点区、持仓共享档案与已投递价格、技术面、事件、提醒。unretrieved/partial/heartbeat 断供独立展示。指令未启用；不抓行情、不计算指标；关注池列表不返回分笔成本，点击标的详情可只读查看已登记 lots。完整 K 线与完整 §6 交互未在本次实现。
 
 两项裁决见 [DECISIONS.md](docs/DECISIONS.md)，按作者要求保留 PROTOCOL.md 原文，待统一升 v1.1。reader token 留到 P2；view 缺依据/失效条件返回 400 view_incomplete，不入库，允许同 key 补齐重发。
 

@@ -11,3 +11,8 @@ INSERT OR IGNORE INTO feed_items (protocol_version,id,idempotency_key,type,from_
 INSERT OR IGNORE INTO watchlist(symbol,market,name,tier,proxy_symbol) VALUES('09999.HK','HK','示例生物科技','core',NULL);
 INSERT OR IGNORE INTO events(id,symbol,event_type,title,event_date,description) VALUES('demo-event','09999.HK','other','虚构事件登记','2026-11-03','仅用于界面验收的虚构事件');
 INSERT OR IGNORE INTO alert_rules(id,symbol,rule_type,rule_desc,condition_json,one_shot,active,last_triggered_at) VALUES('demo-rule','09999.HK','demo','虚构到 55 提醒','{"threshold":55}',1,0,'2026-11-03T16:00:00+08:00');
+
+-- §2.6 公开协议虚构 lots。仅本地手动导入，缺失的数值留 NULL。
+INSERT OR IGNORE INTO watchlist_lots(lot_id,symbol,shares,cost,note,alert_rule) VALUES('demo-base','09999.HK',500,50.0,'底仓，不动',NULL);
+INSERT OR IGNORE INTO watchlist_lots(lot_id,symbol,shares,cost,note,alert_rule) VALUES('demo-topup-20260101','09999.HK',200,42.0,'加仓笔','到 55 提醒卖出，一次性');
+INSERT OR IGNORE INTO watchlist(symbol,market,name,tier) VALUES('ABCD.US','US','ABCD','watch');

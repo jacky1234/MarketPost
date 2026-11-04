@@ -78,3 +78,17 @@ test('heartbeat：最后一条、来源过滤、历史日与超时/缺失/失败
  h=await (await get('/v1/health/producers?trading_day=2026-11-03&from=muse')).json();assert.equal(h.producers.find(x=>x.producer==='tech-job').state,'failed');
  assert.equal((await get('/v1/health/producers?trading_day=broken')).status,400);
 });
+
+test('标的详情只读 lots：按标的隔离，保留 NULL，列表无成本，写 token 禁读',async()=>{
+ await env.DB.prepare("INSERT INTO watchlist_lots(lot_id,symbol,shares,cost,note) VALUES('demo-topup-20260101','09999.HK',200,42,'加仓笔')").run();
+ await env.DB.prepare("INSERT INTO watchlist(symbol,market,name,tier) VALUES('ABCD.US','US','ABCD','watch')").run();
+ await env.DB.prepare("INSERT INTO watchlist_lots(lot_id,symbol,shares,cost) VALUES('demo-unrecorded','ABCD.US',NULL,NULL)").run();
+ const response=await get('/v1/watchlist/09999.HK');assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+ const body=await response.json();assert.equal(body.item.symbol,'09999.HK');assert.equal(body.lots.length,2);assert.ok(body.lots.every(l=>l.symbol==='09999.HK'));assert.equal(body.lots.find(l=>l.lot_id==='demo-topup-20260101').cost,42);
+ const missing=await (await get('/v1/watchlist/ABCD.US')).json();assert.equal(missing.lots[0].cost,null);assert.equal(missing.lots[0].shares,null);
+ const list=await (await get('/v1/watchlist')).json();assert.ok(list.items.every(x=>!('lots'in x)&&!('cost'in x)&&!('shares'in x)));
+ assert.equal((await get('/v1/watchlist/09999.HK',{Authorization:`Bearer ${tokens.muse}`})).status,401);
+ assert.equal((await get('/v1/watchlist/unknown')).status,404);
+ assert.equal((await get('/v1/watchlist/%E0%A4%A')).status,400);
+ await env.DB.prepare("UPDATE watchlist SET active = 0 WHERE symbol = 'ABCD.US'").run();assert.equal((await get('/v1/watchlist/ABCD.US')).status,404);
+});

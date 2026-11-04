@@ -21,4 +21,13 @@ partial 只能由生产者声明行情数据缺失，服务端不得降级生成
 - q 搜索 name/symbol/title/summary/body_md，字面子串，不把 % 或 _ 当 SQL 通配符。
 - events 的 from/to 为事件日期闭区间；可缺省。共享日历/关注池/规则无 agent 字段，界面明确标为共享档案；agent 产出的 feed 与 heartbeat 按来源筛选，不伪造共享档案来源。
 - 新鲜度仅基于已登记 feed 的 producer 与最后 heartbeat；未知/从未投递的任务无法推断。默认 heartbeat 超时 86400 秒，可用非敏感环境配置 HEARTBEAT_MAX_AGE_SECONDS 调整；这是运行状态判断，不是交易逻辑。历史日期以该日上海结束时刻为参照，今天以当前时间为参照。
-- 不新增金融计算、抓价或内容生成。无服务端 lots 查询端点；持仓仅展示关注池与生产者已经投递的快照，分笔成本暂不展示。
+- 不新增金融计算、抓价或内容生成。lots 详情由下述 D003 本轮授权扩展；关注池列表仍不返回 lots。
+
+## D003 — 本轮 owner 授权标的 lots 详情
+
+owner 在手机视觉和页头压缩之后明确授权“标的详情页 lots 展示（虚构 fixture），K 线不要做”。为此增加只读 GET /v1/watchlist/{symbol}，返回 active 标的档案和该标的 lots。此为 §5 未列出的 GET 扩展，依据本轮直接授权记录，PROTOCOL.md 不变，待统一纳入 v1.1。
+
+- 面向人/看板全读路径；当前仅本地匿名读，部署仍须先完成 Access，不配置线上鉴权。
+- 生产者 Authorization 读取继续拒绝；P2 reader 不获得 lots。GET /v1/watchlist 列表不包含 lots、shares、cost。
+- 缺失股数/成本保留 null，界面显示“未录入”；不计算盈亏、不合并分笔、不生成交易建议。lots 无历史时间维度，界面明确展示当前登记档案，日期/agent 过滤只影响 AI 内容。
+- 仓库和本地验收只用公开协议的 demo-base / demo-topup-20260101 数字，真实分笔不入仓库。

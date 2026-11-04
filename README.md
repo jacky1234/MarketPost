@@ -37,9 +37,11 @@ lint 使用 TypeScript 严格类型检查。测试框架使用 Node 内建 node:
 
 ## API 与看板范围
 
-实现 POST /v1/feed、GET /v1/feed（from/type/symbol/trading_day）、GET /v1/agents（可用 trading_day 限定，否则历史汇总）、GET /v1/watchlist（仅 active，无 lots 成本）。其余协议接口返回 501。feed 的 q/limit/cursor 尚未实现，显式返回 400，不静默忽略。
+实现 POST /v1/feed，以及 P1 GET feed 列表/详情、agents、watchlist、events、alert-rules、health/producers。feed 支持 from/type/symbol/trading_day/q/limit/cursor。接口响应与分页约定见 [API.md](docs/API.md)。commands 和 watchlist 写接口仍返回 501。
 
-看板为七 Tab 静态空壳，日期默认上海今天，agent 为演示选项，筛选状态写入 URL 支持回退，无 API 或行情请求。指令未启用。
+七 Tab 已接本地查询：动态 agent 及条数、日期与关键词、时间流类型/标的筛选、详情与独立观点区、持仓共享档案与已投递价格、技术面、事件、提醒。unretrieved/partial/heartbeat 断供独立展示。指令未启用；不抓行情、不计算指标、不展示分笔成本。完整 K 线与完整 §6 交互未在本次实现。
+
+两项裁决见 [DECISIONS.md](docs/DECISIONS.md)，按作者要求保留 PROTOCOL.md 原文，待统一升 v1.1。reader token 留到 P2；view 缺依据/失效条件返回 400 view_incomplete，不入库，允许同 key 补齐重发。
 
 ## 部署前的鉴权配置（本次不执行）
 
@@ -54,5 +56,7 @@ Cloudflare Access 挡人读页面和 GET 接口，POST /v1/feed 对 Access 放�
 依赖仅开发工具 Wrangler 与 TypeScript：后者用于指定 TypeScript 技术栈的编译及严格类型检查，兼任 lint，无运行时第三方依赖；测试使用 Node 自带框架。[Cloudflare 本地 D1 文档](https://developers.cloudflare.com/d1/best-practices/local-development/)与[静态资源绑定文档](https://developers.cloudflare.com/workers/static-assets/binding/)说明本地绑定和同仓静态资源机制。
 
 ## 文档
+
+- [P1 本地验收与限制](docs/P1-VALIDATION.md)
 
 - [Agent 接入指南](docs/AGENT-ONBOARDING.md)

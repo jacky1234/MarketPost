@@ -42,10 +42,11 @@
 
 - 通过：PROTOCOL.md 与审核公开版逐字节一致。
 - 通过：npm run lint（TypeScript 严格类型检查）。
-- 通过：npm test，7 组测试全部在 Wrangler 本地 D1 通过：信封/缺 from、枚举和来源、token/from、重复幂等/跨 agent、非法 JSON 和缺 token、watchlist 不返回 lots/拒绝生产者读取、501 占位路由。
+- 通过：npm test，11 组测试全部在 Wrangler 本地 D1 通过：信封/缺 from、枚举和来源、token/from、重复幂等/跨 agent、非法 JSON 和缺 token、watchlist 不返回 lots/拒绝生产者读取、501 占位路由。
 - 通过：wrangler d1 migrations apply DB --local，0001_init.sql 成功。
 - 通过：wrangler dev 本地回环 HTTP 验证，页面与静态资源、feed/agents/watchlist GET、501 占位、无 token POST 拒绝；结束后已关闭开发进程。
-- 未执行：页面浏览器视觉检查；真实数据三天验收、部署与线上配置。
+- 手机视觉检查：owner 已提供真机截图、初步通过（2026-11-04），细项检查（回顶按钮位置、各 Tab 空态）留待下一轮；未宣称完整验收通过。
+- 未执行：真实数据三天验收、部署与线上配置。
 - 已生成 package-lock.json，CI 使用 npm ci + lint + test。
 
 ## Git 与 push
@@ -57,7 +58,7 @@
 
 ## 未完成与协议差异
 
-完整清单见 ROADMAP.md。P0 还欠服务地址/token 发放确认；P1 还欠详情/事件/提醒/新鲜度等 501 接口、查询扩展、实际看板渲染、人类鉴权及三天私有数据验收；P2–P4 未开始。
+完整清单见 ROADMAP.md。P0 还欠服务地址/token 发放确认；P1 查询接口和只读看板已接通，仍欠手机视觉细项、完整 K 线/lots 详情、人类鉴权及三天私有数据验收；P2–P4 未开始。
 
 协议差异包括 SQLite 类型与时间默认值适配、两处 agent 读权限描述、部分观点退回的响应歧义、P1 地基范围、commands 阶段标注差异、信封可空性及幂等前缀解释，均在 ROADMAP.md 逐项记录。未修改 PROTOCOL.md。
 
@@ -68,3 +69,7 @@
 - 正式部署前单独确认部署与 Access 读保护/POST 放行策略，启用 GitHub secret scanning 和 push protection。
 
 依赖理由：Wrangler 为指定工具；TypeScript 为指定语言的编译和严格类型检查工具；测试采用 Node 内置 node:test，无运行时第三方依赖。
+
+## P1 后续交付
+
+两项裁决见 DECISIONS.md；接口约定见 API.md；本次验收和限制见 P1-VALIDATION.md。两笔提交分别为查询接口/裁决/测试与只读看板，hash 见交付回复。PROTOCOL.md 原文保持不变。本轮沿用已通过的 lint 和 11 组 D1 测试，不重复跑测试套件。

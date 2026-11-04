@@ -1,0 +1,28 @@
+# P1 查询约定
+
+正式访问控制等单独确认；本地 GET 匿名可读，所有带 Authorization 的读取继续拒绝。生产者 token 只能 POST feed。reader token 等 P2，见 DECISIONS.md。
+
+- GET /v1/feed：from/type/symbol/trading_day 精确匹配；q 对名称、代码、标题、摘要、正文做字面子串搜索；limit 默认 30，范围 1–100；cursor 与当前筛选条件绑定。响应 {items, next_cursor}，next_cursor=null 表示结束。下一页保持筛选原样，把 next_cursor 作为 cursor 传回。按实际发布时间与 id 倒序，urgent 的列表置顶由时间流在已加载内容内展示。
+- GET /v1/feed/{id}：返回完整信封；不存在 404。
+- GET /v1/agents?trading_day=YYYY-MM-DD：当天出现过的 agent 与条数，缺日期时汇总历史。响应 {agents:[{from,count}]}。
+- GET /v1/watchlist：共享 active 关注池，不返回 lots/成本；不是 P2 的基础 reader 投影。
+- GET /v1/events?from=YYYY-MM-DD&to=YYYY-MM-DD：按 event_date 闭区间；响应 {items}，按事件日和 id 排序。
+- GET /v1/alert-rules：共享规则登记，响应 {items}；condition_json 解码为 condition，不执行条件、不更新规则。
+- GET /v1/health/producers?trading_day=YYYY-MM-DD&from=agent：已知 producer 的最近 heartbeat。响应 {reference_at,max_age_seconds,producers}；每项含 from/producer/state/last_heartbeat_at/last_published_at/age_seconds/note。state 为 fresh/stale/missing/failed/skipped/unknown。默认超时 86400 秒，非敏感环境变量 HEARTBEAT_MAX_AGE_SECONDS 可覆盖。历史日使用上海当日结束时间与当前时间的较早值。没有投递过的任务无法判断。
+- 无效分页/日期/cursor：400，code=invalid_query；存储失败：500，不回显 SQL/凭证。
+- 不完整观点：400，code=view_incomplete，逐字段 errors；不入库、不消耗幂等键，补全后同 key 重发。服务端永不生成 partial。
+
+日期以 trading_day 过滤，绝不拿 published_at 日期代替交易日。分页不保证插入过程中的快照隔离。共享表不具有 agent 归属，界面单独标注；feed/heartbeat 按日期与 agent 真实过滤。
+
+看板正文以 Markdown 原文安全展示，不执行 HTML；来源仅放行 http/https 链接，所有生产者文本按 textContent 渲染。详情的观点对照限当前已加载同日同标的其他 agent 内容。持仓页不提供分笔成本接口；技术面展示生产者已计算字段与信号，完整 K 线图仍待后续实现。
+
+## 本地虚构数据验收
+
+```sh
+npm ci
+npm run db:migrate
+npx wrangler d1 execute DB --local --file tests/fixtures/board.sql
+npm run dev
+```
+
+打开本机页面并选择 2026-11-03；SQL 仅用于本地，含多 agent、未查到/部分缺失、历史 heartbeat 超时、技术报告、事件与规则。无线上 seed 流程、无真实凭证或私有数据。

@@ -33,3 +33,9 @@
 - 发现并修复：URL 直接打开后部 Tab 时选中项横向不可见；现在渲染时将选中项滚入横滑栏可见范围，不改变页面纵向位置。
 - 额外核对：来源筛选、URL 回退、partial/unretrieved/heartbeat 断供、HTTP 失败及重试，浏览器无未捕获 JS 异常。机器检查结果在 screenshots/mobile/results.json。
 - 手动重现工具 tests/mobile-visual.mjs；Playwright 安装在临时目录（通过 PLAYWRIGHT_MODULE 指向模块），未加入项目依赖。
+
+## 页头与吸顶（第二项）
+
+- 仅调整 HTML/CSS：压缩标题、口号和 Tab 间距；全局日期/agent/搜索筛选条移至 header 外独立 sticky 容器，避免被 header 高度限制。
+- 390×844 测得页头 172.78px、筛选条 149px；滚动后筛选条 top=0，所有筛选字段在屏内，来源筛选仍正确生效，无横向溢出或浏览器异常。
+- [页头截图](screenshots/compact/top.png)、[吸顶截图](screenshots/compact/sticky.png)、[筛选后截图](screenshots/compact/filtered.png)，测量记录见同目录 results.json。

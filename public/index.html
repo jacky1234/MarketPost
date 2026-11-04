@@ -3,8 +3,8 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MarketPost · 盘面邮局</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
 <body>
 <header><div class="masthead"><small>MARKETPOST / 盘面邮局</small><span class="edition">协议 v1 · 只读</span></div><h1>让每份观察，有迹可循。</h1><p class="lede">AI 投递，按日归档。事实与观点，分开展示。</p><nav role="tablist" aria-label="看板栏目"></nav>
-<form id="filters"><label>交易日期<input name="day" type="date" required></label><label>来源 agent<select name="from"><option value="">全部来源</option></select></label><label class="search">搜索归档<input name="q" type="search" maxlength="200" placeholder="标的名称、代码或关键词"></label><button type="submit">查询</button></form>
 </header>
+<div class="filter-bar"><form id="filters"><label>交易日期<input name="day" type="date" required></label><label>来源 agent<select name="from"><option value="">全部来源</option></select></label><label class="search">搜索归档<input name="q" type="search" maxlength="200" placeholder="标的名称、代码或关键词"></label><button type="submit">查询</button></form></div>
 <main><div class="section-heading"><span id="context"></span><button id="reload" type="button">重新读取</button></div><p class="read-note">读取已入库内容，不触发 AI 任务或行情抓取。</p><section id="freshness" aria-label="生产者新鲜度"></section><div id="feedback" role="status" aria-live="polite"></div><section id="panel" role="tabpanel" tabindex="-1"><h2 id="title">总览</h2><form id="stream-filters" hidden><label>内容类型<select name="type"><option value="">全部类型</option></select></label><label>标的<select name="symbol"><option value="">全部标的</option></select></label></form><div id="content"></div><button id="more" type="button" hidden>加载更多</button></section></main>
 <footer>MarketPost · 服务只归档，看板只展示。时间统一 Asia/Shanghai。</footer><button id="top" hidden aria-label="回到顶部">↑ 回顶</button>
 <dialog id="detail"><button id="close-detail" type="button">关闭详情</button><div id="detail-content"></div></dialog>

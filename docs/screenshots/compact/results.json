@@ -1,0 +1,16 @@
+{
+  "viewport": "390×844",
+  "initial": {
+    "header": 172.78125,
+    "filter": 149,
+    "width": 390
+  },
+  "sticky": {
+    "x": 0,
+    "y": 0,
+    "width": 390,
+    "height": 149
+  },
+  "filterInteraction": "pass",
+  "pageErrors": []
+}

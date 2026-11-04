@@ -1,0 +1,8 @@
+const tabs=['总览','时间流','持仓','技术面','事件','提醒','指令'];
+const nav=document.querySelector('nav');
+tabs.forEach((name,i)=>{const button=document.createElement('button');button.type='button';button.role='tab';button.id=`tab-${i}`;button.setAttribute('aria-controls','panel');button.setAttribute('aria-selected',String(i===0));button.textContent=name;const badge=document.createElement('span');badge.textContent='0';button.append(badge);button.onclick=()=>{nav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b===button)));document.querySelector('#panel').setAttribute('aria-labelledby',button.id);document.querySelector('#title').textContent=name;document.querySelector('#empty').textContent=i===6?'未启用 · 二期指令队列':i===0?'待 AI POST（预计 16:30）':'暂无数据 · 待 AI POST';};nav.append(button);});
+document.querySelector('#panel').setAttribute('aria-labelledby','tab-0');
+const form=document.querySelector('form');
+function restore(){const params=new URLSearchParams(location.search);form.elements.day.value=params.get('day')||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());form.elements.from.value=params.get('from')||'';}
+restore();form.onsubmit=e=>e.preventDefault();form.onchange=()=>{const url=new URL(location.href);url.searchParams.set('day',form.elements.day.value);url.searchParams.set('from',form.elements.from.value);history.pushState(null,'',url);};window.addEventListener('popstate',restore);
+const topButton=document.querySelector('#top');window.addEventListener('scroll',()=>{topButton.hidden=window.scrollY<window.innerHeight;},{passive:true});topButton.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});

@@ -1,0 +1,41 @@
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomBytes, randomUUID } from 'node:crypto';
+import { getPlatformProxy } from 'wrangler';
+import worker from '../.test-build/index.js';
+import { validate } from '../.test-build/validation.js';
+const example=JSON.parse(await readFile(new URL('../examples/muse-post-market.json',import.meta.url)));
+let platform, directory, env;
+const tokens={muse:randomBytes(32).toString('hex'),codex:randomBytes(32).toString('hex')};
+before(async()=>{
+ directory=await mkdtemp(join(tmpdir(),'marketpost-test-'));
+ platform=await getPlatformProxy({persist:{path:directory}});
+ env={...platform.env,PRODUCER_TOKEN_MUSE:tokens.muse,PRODUCER_TOKEN_CODEX:tokens.codex};
+ const sql=await readFile(new URL('../migrations/0001_init.sql',import.meta.url),'utf8');
+ for(const statement of sql.replace(/--[^\n]*/g,'').split(';').filter(s=>s.trim())) await env.DB.prepare(statement).run();
+});
+after(async()=>{await platform?.dispose();if(directory) await rm(directory,{recursive:true,force:true});});
+const post=(item,agent='muse')=>worker.fetch(new Request('http://localhost/v1/feed',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${tokens[agent]}`},body:JSON.stringify(item)}),env);
+const get=(path,headers)=>worker.fetch(new Request('http://localhost'+path,{headers}),env);
+test('有效信封通过，缺 from 拒绝',()=>{assert.deepEqual(validate(example).errors,{});const item={...example};delete item.from;assert.ok(validate(item).errors.from);});
+test('拒绝无效枚举、超长摘要、缺交易日和无来源公告',()=>{for(const patch of [{type:'unknown'},{severity:'fatal'},{summary:'字'.repeat(121)},{trading_day:null},{type:'announcement',sources:[]}]) assert.equal(validate({...example,...patch}).item,undefined);});
+test('token 不能冒充其他 from',async()=>{assert.equal((await post({...example,from:'codex',idempotency_key:example.idempotency_key.replace('muse:','codex:')})).status,401);});
+test('同 key 重试幂等，不同 agent 同标的同日独立保存',async()=>{
+ const first=await post(example);assert.equal(first.status,201);assert.equal((await first.json()).deduplicated,false);
+ const retry=await post({...example,id:randomUUID()});assert.equal(retry.status,200);assert.deepEqual(await retry.json(),{id:example.id,deduplicated:true});
+ const other={...example,id:randomUUID(),from:'codex',idempotency_key:example.idempotency_key.replace('muse:','codex:')};assert.equal((await post(other,'codex')).status,201);
+ const rows=await (await get('/v1/feed?symbol=09999.HK&trading_day=2026-11-03')).json();assert.equal(rows.items.length,2);
+ assert.equal((await (await get('/v1/feed?from=codex&type=post_market')).json()).items.length,1);
+ assert.equal((await (await get('/v1/agents?trading_day=2026-11-03')).json()).agents.length,2);
+});
+test('非法 JSON 与缺失 token 拒绝',async()=>{assert.equal((await worker.fetch(new Request('http://localhost/v1/feed',{method:'POST',headers:{'content-type':'application/json'},body:'{'}),env)).status,400);assert.equal((await worker.fetch(new Request('http://localhost/v1/feed',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(example)}),env)).status,401);});
+test('只读关注池不返回 lots，生产者无读权限',async()=>{
+ await env.DB.prepare("INSERT INTO watchlist(symbol,market,name,tier) VALUES('09999.HK','HK','示例生物科技','core')").run();
+ await env.DB.prepare("INSERT INTO watchlist_lots(lot_id,symbol,shares,cost) VALUES('demo-base','09999.HK',500,50)").run();
+ const body=await (await get('/v1/watchlist')).json();assert.equal(body.items.length,1);for(const key of ['lots','shares','cost']) assert.equal(key in body.items[0],false);
+ for(const path of ['/v1/watchlist','/v1/feed','/v1/agents']) assert.equal((await get(path,{Authorization:`Bearer ${tokens.muse}`})).status,401);
+});
+test('协议未实现接口返回 501',async()=>{for(const path of ['/v1/feed/example','/v1/events','/v1/alert-rules','/v1/health/producers','/v1/commands']) assert.equal((await get(path)).status,501);});

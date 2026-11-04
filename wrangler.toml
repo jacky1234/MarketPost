@@ -1,0 +1,23 @@
+name = "marketpost"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+# account_id = "<CLOUDFLARE_ACCOUNT_ID>"
+# 自定义域名待确认，不配置 routes；禁止部署。
+workers_dev = false
+preview_urls = false
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+ENVIRONMENT = "local"
+# Cloudflare Access 预留：部署前保护页面和 GET；POST /v1/feed 路径放行。
+# 本次不验证 Access JWT，不提供生产环境读鉴权。
+
+[[d1_databases]]
+binding = "DB"
+database_name = "marketpost-placeholder"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

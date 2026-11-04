@@ -1,0 +1,36 @@
+{
+  "protocol_version": "1.0",
+  "id": "10000000-0000-4000-8000-000000000001",
+  "idempotency_key": "muse:manual:post_market:09999.HK:2026-11-03",
+  "type": "post_market",
+  "from": "muse",
+  "producer": "manual",
+  "market": "HK",
+  "symbol": "09999.HK",
+  "name": "示例生物科技",
+  "tier": "core",
+  "trading_day": "2026-11-03",
+  "event_at": "2026-11-03T16:00:00+08:00",
+  "published_at": "2026-11-03T16:30:00+08:00",
+  "severity": "normal",
+  "status": "ok",
+  "title": "示例生物科技 盘后总结 2026-11-03",
+  "summary": "收 50.00，-2.00%，跌破 MA20，无新公告。",
+  "body_md": "虚构联调数据。",
+  "data": {
+    "open": 51,
+    "high": 52,
+    "low": 49,
+    "close": 50,
+    "change_pct": -2,
+    "volume": 10000,
+    "volume_ratio": 1
+  },
+  "signals": [],
+  "sources": [],
+  "reply_to": null,
+  "tags": [
+    "盘后",
+    "示例管线"
+  ]
+}

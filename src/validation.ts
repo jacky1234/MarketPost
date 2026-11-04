@@ -31,7 +31,10 @@ export function validate(value: unknown): { item?: Feed; errors: Record<string,s
   if (f.type === 'announcement' && (!Array.isArray(f.sources) || !f.sources.length)) errors.sources = '公告必须附来源';
   if (f.view != null) {
     if (!object(f.view) || !['market','sector','symbol'].includes(f.view.scope as string) || !['bearish','cautious','neutral','cautiously_positive','positive'].includes(f.view.stance as string)) errors.view = '无效观点结构或枚举';
-    else if (!Array.isArray(f.view.basis) || !f.view.basis.length || !f.view.basis.every(text) || !text(f.view.invalidation)) errors.view = '缺少 basis 或 invalidation（partial：请生产者补齐）';
+    if (object(f.view)) {
+      if (!Array.isArray(f.view.basis) || !f.view.basis.length || !f.view.basis.every(text)) errors['view.basis'] = '必填非空依据数组';
+      if (!text(f.view.invalidation)) errors['view.invalidation'] = '必填失效条件';
+    }
   }
   for (const k of ['advice','recommendation','trade_action']) if (k in f) errors[k] = '协议不允许此字段';
   return { item: Object.keys(errors).length ? undefined : f, errors };

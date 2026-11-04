@@ -38,4 +38,43 @@ test('只读关注池不返回 lots，生产者无读权限',async()=>{
  const body=await (await get('/v1/watchlist')).json();assert.equal(body.items.length,1);for(const key of ['lots','shares','cost']) assert.equal(key in body.items[0],false);
  for(const path of ['/v1/watchlist','/v1/feed','/v1/agents']) assert.equal((await get(path,{Authorization:`Bearer ${tokens.muse}`})).status,401);
 });
-test('协议未实现接口返回 501',async()=>{for(const path of ['/v1/feed/example','/v1/events','/v1/alert-rules','/v1/health/producers','/v1/commands']) assert.equal((await get(path)).status,501);});
+test('协议未实现接口返回 501',async()=>{for(const path of ['/v1/commands']) assert.equal((await get(path)).status,501);});
+
+test('view_incomplete 不入库，同幂等键补全可重发且不被服务端降级',async()=>{
+ const item={...example,id:randomUUID(),idempotency_key:'muse:manual:view:09999.HK:2026-11-03',view:{scope:'symbol',target:'09999.HK',stance:'neutral'}};
+ const bad=await post(item);assert.equal(bad.status,400);assert.equal((await bad.json()).code,'view_incomplete');
+ assert.equal((await get('/v1/feed/'+item.id)).status,404);
+ item.view.basis=['虚构测试依据'];item.view.invalidation='虚构条件失效';
+ assert.equal((await post(item)).status,201);
+ const saved=await (await get('/v1/feed/'+item.id)).json();assert.equal(saved.status,'ok');assert.deepEqual(saved.view,item.view);
+});
+test('详情、搜索与分页：同时间不遗漏，跨时区按实际时刻排序，cursor 绑定筛选',async()=>{
+ const base={...example,trading_day:'2026-11-02',name:'示例生物科技 100%_虚构'};
+ for(const [n,at]of [[1,'2026-11-02T16:30:00+08:00'],[2,'2026-11-02T08:30:00Z'],[3,'2026-11-02T10:00:00+00:00']]){
+  assert.equal((await post({...base,id:`40000000-0000-4000-8000-00000000000${n}`,idempotency_key:`muse:manual:query:09999.HK:2026-11-02:${n}`,published_at:at})).status,201);
+ }
+ const query='/v1/feed?trading_day=2026-11-02&q='+encodeURIComponent('100%_虚构')+'&limit=1';let cursor=null,ids=[];
+ do {const r=await get(query+(cursor?'&cursor='+encodeURIComponent(cursor):''));assert.equal(r.status,200);const body=await r.json();ids.push(...body.items.map(x=>x.id));cursor=body.next_cursor;if(ids.length===1){assert.equal(ids[0],'40000000-0000-4000-8000-000000000003');assert.equal((await get('/v1/feed?q=different&cursor='+encodeURIComponent(cursor))).status,400);}}while(cursor);
+ assert.equal(ids.length,3);assert.equal(new Set(ids).size,3);assert.ok(ids[1]>ids[2]);
+ for(const query of ['limit=0','limit=101','limit=1.5','cursor=broken','trading_day=2026-02-30'])assert.equal((await get('/v1/feed?'+query)).status,400);
+ assert.equal((await get('/v1/feed/missing')).status,404);
+ const search=await (await get('/v1/feed?q='+encodeURIComponent("' OR 1=1 --"))).json();assert.equal(search.items.length,0);
+});
+test('events 日期闭区间、alert rules JSON 与只读权限',async()=>{
+ await env.DB.prepare("INSERT INTO events(id,symbol,event_type,title,event_date) VALUES('demo-event','09999.HK','other','虚构测试事件','2026-11-03')").run();
+ await env.DB.prepare("INSERT INTO alert_rules(id,symbol,rule_type,rule_desc,condition_json,one_shot) VALUES('demo-rule','09999.HK','demo','虚构规则','{\"threshold\":55}',1)").run();
+ assert.equal((await (await get('/v1/events?from=2026-11-03&to=2026-11-03')).json()).items.length,1);
+ assert.equal((await (await get('/v1/events?from=2026-11-04')).json()).items.length,0);
+ assert.equal((await get('/v1/events?from=2026-11-04&to=2026-11-03')).status,400);
+ const rules=await (await get('/v1/alert-rules')).json();assert.deepEqual(rules.items[0].condition,{threshold:55});assert.equal('condition_json' in rules.items[0],false);
+ for(const p of ['/v1/feed/'+example.id,'/v1/events','/v1/alert-rules','/v1/health/producers'])assert.equal((await get(p,{Authorization:`Bearer ${tokens.muse}`})).status,401);
+});
+test('heartbeat：最后一条、来源过滤、历史日与超时/缺失/失败',async()=>{
+ const beat={...example,id:randomUUID(),type:'system_heartbeat',producer:'tech-job',trading_day:null,idempotency_key:'muse:tech-job:system_heartbeat:demo:1',event_at:'2026-11-03T16:00:00+08:00',data:{job:'tech-job',ran_at:'2026-11-03T16:00:00+08:00',result:'ok',note:'虚构运行'}};
+ assert.equal((await post(beat)).status,201);
+ let h=await (await get('/v1/health/producers?trading_day=2026-11-03&from=muse')).json();assert.ok(h.producers.every(x=>x.from==='muse'));assert.equal(h.producers.find(x=>x.producer==='tech-job').state,'fresh');assert.equal(h.producers.find(x=>x.producer==='manual').state,'missing');
+ const stale=await worker.fetch(new Request('http://localhost/v1/health/producers?trading_day=2026-11-03&from=muse'),{...env,HEARTBEAT_MAX_AGE_SECONDS:'60'});assert.equal((await stale.json()).producers.find(x=>x.producer==='tech-job').state,'stale');
+ assert.equal((await post({...beat,id:randomUUID(),idempotency_key:beat.idempotency_key+':2',published_at:'2026-11-03T17:00:00+08:00',data:{...beat.data,result:'failed'}})).status,201);
+ h=await (await get('/v1/health/producers?trading_day=2026-11-03&from=muse')).json();assert.equal(h.producers.find(x=>x.producer==='tech-job').state,'failed');
+ assert.equal((await get('/v1/health/producers?trading_day=broken')).status,400);
+});

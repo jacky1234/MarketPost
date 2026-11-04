@@ -1,0 +1,108 @@
+{
+  "stage": "mobile",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "tabs": [
+    {
+      "mode": "filled",
+      "tab": "总览",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "filled",
+      "tab": "时间流",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "filled",
+      "tab": "持仓",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "filled",
+      "tab": "技术面",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "filled",
+      "tab": "事件",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "filled",
+      "tab": "提醒",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "filled",
+      "tab": "指令",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "empty",
+      "tab": "总览",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "empty",
+      "tab": "时间流",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "empty",
+      "tab": "持仓",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "empty",
+      "tab": "技术面",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "empty",
+      "tab": "事件",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "empty",
+      "tab": "提醒",
+      "viewport": "390×844",
+      "overflow": false
+    },
+    {
+      "mode": "empty",
+      "tab": "指令",
+      "viewport": "390×844",
+      "overflow": false
+    }
+  ],
+  "back_to_top": {
+    "x": 296.984375,
+    "y": 776,
+    "width": 75.015625,
+    "height": 48
+  },
+  "checks": [
+    "筛选条无横溢",
+    "逐Tab空态",
+    "回顶按钮屏内且可点击",
+    "agent过滤与URL回退",
+    "partial/unretrieved/断供",
+    "HTTP错误与重试"
+  ],
+  "pageErrors": []
+}

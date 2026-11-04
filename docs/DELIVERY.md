@@ -50,20 +50,19 @@
 
 ## Git 与 push
 
-- main 分支已由用户初始化；本地验证通过后执行首次提交，commit hash 见最终交付回复或 git rev-parse HEAD。
+- main 分支已完成首次提交：2a4d80528548ec52ace5fca885ed4c7a5f328c23。
 - 首次提交信息：chore: initialize MarketPost skeleton (protocol v1, P0/P1 foundation)
 - 使用项目通用提交身份，未将本机账号身份写入提交元数据。
-- push 未执行：REMOTE_URL 未提供，当前无 remote；未创建远程仓库。
+- 已将首次提交推送到用户提供的公共仓库，main 跟踪 origin/main。未另建仓库；后续文档提交 hash 见最终交付回复。
 
 ## 未完成与协议差异
 
-完整清单见 ROADMAP.md。P0 还欠远程配置与服务地址/token 发放确认；P1 还欠详情/事件/提醒/新鲜度等 501 接口、查询扩展、实际看板渲染、人类鉴权及三天私有数据验收；P2–P4 未开始。
+完整清单见 ROADMAP.md。P0 还欠服务地址/token 发放确认；P1 还欠详情/事件/提醒/新鲜度等 501 接口、查询扩展、实际看板渲染、人类鉴权及三天私有数据验收；P2–P4 未开始。
 
 协议差异包括 SQLite 类型与时间默认值适配、两处 agent 读权限描述、部分观点退回的响应歧义、P1 地基范围、commands 阶段标注差异、信封可空性及幂等前缀解释，均在 ROADMAP.md 逐项记录。未修改 PROTOCOL.md。
 
 ## 后续需要提供或恢复
 
-- 公共仓库 REMOTE_URL；无需提供账号身份或凭证到文档。
 - 后续部署时在私有配置提供 Cloudflare account_id、D1 database_id、拟用服务地址；本次保持占位。
 - 每 agent 独立随机 token 的私密发放渠道，建议密码管理器生成至少 32 字节；真实值只填本地忽略文件或 Secrets。
 - 正式部署前单独确认部署与 Access 读保护/POST 放行策略，启用 GitHub secret scanning 和 push protection。

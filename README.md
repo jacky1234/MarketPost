@@ -8,7 +8,7 @@
                         └──── 静态看板（只展示） ────┘
 ```
 
-唯一事实源为 [PROTOCOL.md](PROTOCOL.md)，原样保存审核公开版。示例全部虚构，无种子数据。本次仅 P0/P1 地基，未部署；完整待办、协议差异及环境阻碍见 [ROADMAP](docs/ROADMAP.md)。
+唯一事实源为 [PROTOCOL.md](PROTOCOL.md)，原样保存审核公开版。示例全部虚构，无种子数据。本次仅 P0/P1 地基，未部署；完整待办及协议差异见 [ROADMAP](docs/ROADMAP.md)。
 
 ## 本地启动
 
@@ -49,6 +49,6 @@ Cloudflare Access 挡人读页面和 GET 接口，POST /v1/feed 对 Access 放�
 
 ## GitHub
 
-REMOTE_URL 尚未提供，不自动创建远程仓库。公共仓库建好后，在 Settings → Code security 中确认 Secret scanning 与 Push protection 已开启；不要提交密钥去测试。CI 在 push / pull_request 运行 lint + test，权限仅 contents: read。
+已关联用户指定的公共仓库，main 为初始化分支。请在 在 Settings → Code security 中确认 Secret scanning 与 Push protection 已开启；不要提交密钥去测试。CI 在 push / pull_request 运行 lint + test，权限仅 contents: read。
 
 依赖仅开发工具 Wrangler 与 TypeScript：后者用于指定 TypeScript 技术栈的编译及严格类型检查，兼任 lint，无运行时第三方依赖；测试使用 Node 自带框架。[Cloudflare 本地 D1 文档](https://developers.cloudflare.com/d1/best-practices/local-development/)与[静态资源绑定文档](https://developers.cloudflare.com/workers/static-assets/binding/)说明本地绑定和同仓静态资源机制。

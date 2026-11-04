@@ -7,8 +7,8 @@
 - [x] 已审核公开协议原样纳入 PROTOCOL.md
 - [x] 协作约定、工程配置、占位迁移、CI 文件
 - [x] lint + test 全部通过（7 组 Wrangler 本地 D1 测试）
-- [x] main 分支首次提交准备完成（提交 hash 见交付回复）
-- [ ] 公共仓库 push（REMOTE_URL 未提供）
+- [x] main 分支首次提交完成（2a4d805）
+- [x] 公共仓库 push，main 跟踪 origin/main
 - [ ] 服务地址确认、token 独立生成与安全发放
 - [ ] 线上 Access 策略、secret scanning 和 push protection（未执行）
 

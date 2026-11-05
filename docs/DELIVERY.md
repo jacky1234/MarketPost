@@ -102,3 +102,9 @@
 ## 第 5 步部署状态
 
 - 已部署，服务地址由主人私下保管。
+
+## Step 5.1：投递口拆分
+
+- 已增加独立投递自定义域并重新部署，保留看板读取域；地址见 API.md 与 AGENT-ONBOARDING.md。
+- ACCESS_* 与现有 token 不变；不再依赖看板域按路径 Bypass 区分读写。
+- 新投递入口：带 muse token POST 201、匿名 GET 401、无 token POST 401；虚构 smoke 使用 2099-01-01。

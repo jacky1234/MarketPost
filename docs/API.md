@@ -1,6 +1,15 @@
 # P1 查询约定
 
-Access 应用创建与部署仍待单独确认。GET /v1/* 在非 local/test 环境必须通过 Access JWT 签名/issuer/aud/时效校验，否则 401；本地/测试无 assertion 时保持匿名兼容，有 assertion 时必须有效。所有带 Authorization 的读取继续拒绝。生产者 token 只能 POST feed。reader token 等 P2，见 DECISIONS.md。
+## 生产地址（step 5.1）
+
+本轮主人明确授权在本文与 Agent 接入指南公开以下服务地址；token、账号标识、团队域和 AUD 仍只走私密配置。
+
+- 投递：`POST <投递地址>/v1/feed`，仅使用绑定 from 的 agent Bearer token。
+- 读取与看板：`<看板地址>`，浏览器 GET API 同源请求，经过 Access 登录并由 Worker 再验证 JWT。
+- 投递域的匿名 `GET /v1/feed` 仍返回 401，不向 agent 暴露读取能力；无 token 的 POST 同样 401。
+- Access 按路径匹配不区分 HTTP 方法，因此不再为看板域的 `/v1/feed` 配置路径 Bypass。主人已将投递 Bypass 应用迁至独立投递域（无路径）；本次不修改 Access 应用或 ACCESS_*。
+
+服务已部署。GET /v1/* 在非 local/test 环境必须通过 Access JWT 签名/issuer/aud/时效校验，否则 401；本地/测试无 assertion 时保持匿名兼容，有 assertion 时必须有效。所有带 Authorization 的读取继续拒绝。生产者 token 只能 POST feed。reader token 等 P2，见 DECISIONS.md。
 
 - GET /v1/feed：from/type/symbol/trading_day 精确匹配；q 对名称、代码、标题、摘要、正文做字面子串搜索；limit 默认 30，范围 1–100；cursor 与当前筛选条件绑定。响应 {items, next_cursor}，next_cursor=null 表示结束。下一页保持筛选原样，把 next_cursor 作为 cursor 传回。按实际发布时间与 id 倒序，urgent 的列表置顶由时间流在已加载内容内展示。
 - GET /v1/feed/{id}：返回完整信封；不存在 404。

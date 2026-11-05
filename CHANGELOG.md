@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Step 5.1：将生产者投递入口拆为独立子域名，保留看板读取域，修复 Access 路径 Bypass 导致浏览器 GET 缺 JWT；更新接入指南与地址说明。
+
 - 第 4 步准备：增加 GET API 的 Access JWT 第二道校验与测试、私密配置忽略规则；POST agent 鉴权不变，无新增依赖，不部署。
 
 - 按 owner 授权增加标的只读 lots 详情，使用公开协议虚构 fixture；列表无成本、写 token 禁读、空值不猜。

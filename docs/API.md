@@ -36,3 +36,7 @@ npm run dev
 ```
 
 打开本机页面并选择 2026-11-03；SQL 仅用于本地，含多 agent、未查到/部分缺失、历史 heartbeat 超时、技术报告、事件与规则。无线上 seed 流程、无真实凭证或私有数据。
+
+## JWT 运行时兼容与诊断
+
+JWKS 使用 redirect:manual，并拒绝非 2xx 响应，不跟随任何跳转。workerd 不支持 redirect:error；已添加原生 workerd 回归测试，避免只在 Node mock 中通过。生产拒绝日志仅输出 access_jwt_rejected 与固定原因码，不记录票据、声明值或身份。

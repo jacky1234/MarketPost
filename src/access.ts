@@ -33,7 +33,8 @@ async function keys(issuer: string): Promise<KeySet> {
   if (loading) return loading;
   const task = (async () => {
     // URL 只由私密配置构造；不信任 JWT 中的 jku/x5u/iss 来选择网络目的地。
-    const response = await fetch(issuer + '/cdn-cgi/access/certs', { redirect: 'error', signal: AbortSignal.timeout(5000) });
+    const response = await fetch(issuer + '/cdn-cgi/access/certs', { redirect: 'manual', signal: AbortSignal.timeout(5000) });
+    // Workers 不支持 redirect:error；manual + 非 2xx 拒绝，仍禁止跟随任何跳转。
     if (!response.ok) throw Error('JWKS unavailable');
     const text = await response.text();
     if (text.length > 65536) throw Error('Oversized JWKS');
@@ -52,25 +53,37 @@ async function keys(issuer: string): Promise<KeySet> {
 export async function hasAccess(request: Request, env: Env): Promise<boolean> {
   const assertion = request.headers.get('Cf-Access-Jwt-Assertion');
   if (assertion === null && (env.ENVIRONMENT === 'local' || env.ENVIRONMENT === 'test')) return true;
+  const deny = (reason: string): false => {
+    if (env.ENVIRONMENT !== 'local' && env.ENVIRONMENT !== 'test') console.warn('access_jwt_rejected', {reason});
+    return false;
+  };
+  let phase = 'malformed_token';
   try {
-    if (!assertion || assertion.length > 16384) return false;
+    if (!assertion) return deny('missing_assertion');
+    if (assertion.length > 16384) return deny('malformed_token');
+    phase = 'config_invalid';
     const issuer = issuerFrom(env), audience = env.ACCESS_AUD;
-    if (typeof audience !== 'string' || !audience.trim()) return false;
+    if (typeof audience !== 'string' || !audience.trim()) return deny('config_invalid');
+    phase = 'malformed_token';
     const parts = assertion.split('.');
-    if (parts.length !== 3) return false;
+    if (parts.length !== 3) return deny('malformed_token');
     const header = parse(parts[0]), claims = parse(parts[1]);
-    if (header.alg !== 'RS256' || typeof header.kid !== 'string' || !header.kid || header.crit !== undefined) return false;
+    if (header.alg !== 'RS256' || typeof header.kid !== 'string' || !header.kid || header.crit !== undefined) return deny('invalid_header');
     const now = Date.now() / 1000;
-    if (claims.iss !== issuer || typeof claims.exp !== 'number' || !Number.isFinite(claims.exp) || claims.exp <= now) return false;
-    if (claims.nbf !== undefined && (typeof claims.nbf !== 'number' || !Number.isFinite(claims.nbf) || claims.nbf > now)) return false;
-    if (claims.iat !== undefined && (typeof claims.iat !== 'number' || !Number.isFinite(claims.iat) || claims.iat > now)) return false;
+    if (claims.iss !== issuer) return deny('issuer_mismatch');
+    if (typeof claims.exp !== 'number' || !Number.isFinite(claims.exp) || claims.exp <= now) return deny('expired_or_invalid_exp');
+    if (claims.nbf !== undefined && (typeof claims.nbf !== 'number' || !Number.isFinite(claims.nbf) || claims.nbf > now)) return deny('not_yet_valid');
+    if (claims.iat !== undefined && (typeof claims.iat !== 'number' || !Number.isFinite(claims.iat) || claims.iat > now)) return deny('future_iat');
     const audiences = typeof claims.aud === 'string' ? [claims.aud] : claims.aud;
-    if (!Array.isArray(audiences) || !audiences.every(a => typeof a === 'string') || !audiences.includes(audience)) return false;
+    if (!Array.isArray(audiences) || !audiences.every(a => typeof a === 'string') || !audiences.includes(audience)) return deny('aud_mismatch');
+    phase = 'jwks_fetch_failed';
     const set = await keys(issuer);
     // 未知 kid 失败关闭；五分钟缓存到期会获取轮换后的密钥，不退回旧 key 或跳过验签。
     const jwk = set.keys.find(k => k.kid === header.kid && k.kty === 'RSA' && (!k.alg || k.alg === 'RS256') && (!k.use || k.use === 'sig'));
-    if (!jwk) return false;
+    if (!jwk) return deny('jwks_key_not_found');
+    phase = 'jwks_key_invalid';
     const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
-    return await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, bytes(parts[2]), new TextEncoder().encode(parts[0] + '.' + parts[1]));
-  } catch { return false; }
+    phase = 'signature_invalid';
+    return await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, bytes(parts[2]), new TextEncoder().encode(parts[0] + '.' + parts[1])) || deny('signature_invalid');
+  } catch { return deny(phase); }
 }

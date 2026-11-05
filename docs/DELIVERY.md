@@ -112,3 +112,14 @@
 ## 文档隐私回退
 
 - 服务地址由主人私下保管；公开接入文档恢复占位，线上读写分工不变。
+
+## Step 5.2：Access JWT 401 诊断与修复（2026-11-05）
+
+- 证据 1：实际生效 Worker 的 ACCESS_TEAM_DOMAIN / ACCESS_AUD 与本地逐字一致，生产环境正确；看板域 cloudflared 登录票据的 AUD 匹配，标准化 issuer 匹配，未过期。未改 AUD、团队域或 Access 应用。真实票据只留私密文件/本地登录缓存。
+- 证据 2：修复前真实 JWT 的 assertion-only GET 和附 Access Cookie 的 GET 均为 401。
+- 证据 3：wrangler tail 关联单次 feed 请求，捕获固定失败码 jwks_fetch_failed。本机 Web Crypto 验签正确；原生 workerd 实际构造 JWKS Request 时可复现失败。
+- 根因：此前 JWKS fetch 使用 redirect:error，workerd 不支持该值，在请求构造阶段抛 TypeError，尚未发起网络请求。修复为 manual，并继续拒绝所有非 2xx（包括 3xx），不放松 issuer/aud/签名/时间校验。参见 [Cloudflare Request 文档](https://developers.cloudflare.com/workers/runtime-apis/request/)。
+- 修复保留仅固定原因码的拒绝日志，不记录 JWT、Cookie、声明值、身份、域名或完整请求。
+- 修复后：真实 JWT GET limit=1 为 200，按 2099-01-01 查询为 200 且能读到 smoke；匿名 GET 仍为 Access 302；投递域带 muse token POST 201、匿名 GET 401、无 token POST 401。新增虚构 smoke 的 tags=[smoke]，trading_day=2099-01-01，验收后由主人清理。
+- lint 通过；完整测试 24/24 通过，新增原生 workerd 正向验签、JWKS 跳转拒绝与诊断日志脱敏回归。仅使用 Wrangler 已锁定的原生运行时依赖，无新增依赖。
+- 已重新部署修复；服务地址由主人私下保管。协议、提交版占位配置、Access 策略与既有 agent token 不变。

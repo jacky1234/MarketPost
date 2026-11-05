@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Step 5.2：修复 JWKS 请求的 workerd redirect 兼容错误导致合法 Access JWT 恒定 401；保留跳转拒绝与全部验证条件，增加原生运行时和日志脱敏回归。
+
 - 按主人裁决撤回公开服务地址，接入文档恢复占位，地址随 token 私密交付。
 
 - 投递域拆分（step 5.1）：保留看板读取域，修复 Access 路径 Bypass 导致浏览器 GET 缺 JWT。

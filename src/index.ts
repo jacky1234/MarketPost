@@ -1,5 +1,6 @@
 import type { Env, Feed } from './types.js';
 import { validate } from './validation.js';
+import { hasAccess } from './access.js';
 import { decode, listFeed, health, QueryError, date } from './queries.js';
 const json = (body: unknown, status = 200) => Response.json(body, {status, headers:{'Cache-Control':'no-store'}});
 const tokenName = (agent: string) => 'PRODUCER_TOKEN_' + agent.toUpperCase().replace(':','_');
@@ -20,8 +21,9 @@ async function route(request: Request, env: Env): Promise<Response> {
     if (!stored || stored.from_agent !== item.from) return json({error:'Conflicting identity'},409);
     return json({id:stored.id,deduplicated:result.meta.changes === 0},result.meta.changes ? 201 : 200);
   }
-  // Access 在此预留；本次只有本地读接口，不把任意请求头当成已验证登录态。
+  // 第一层 Access 留到部署时配置；此处独立验证读 API 的 JWT。
   if (path.startsWith('/v1/') && request.headers.has('authorization')) return json({error:'Producer credentials have no read or management permission'},401);
+  if (method === 'GET' && path.startsWith('/v1/') && !(await hasAccess(request, env))) return json({error:'Unauthorized'},401);
   if (path === '/v1/feed' && method === 'GET') return json(await listFeed(url,env));
   if (path === '/v1/agents' && method === 'GET') {
     const d = url.searchParams.get('trading_day');

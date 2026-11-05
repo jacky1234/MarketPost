@@ -8,3 +8,7 @@ node_modules/
 .test-build/
 .DS_Store
 *.log
+
+# Private launch configuration and owner-only runbook
+wrangler.local.toml
+.launch-private/

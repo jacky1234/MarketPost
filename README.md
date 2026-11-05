@@ -45,13 +45,13 @@ lint 使用 TypeScript 严格类型检查。测试框架使用 Node 内建 node:
 
 ## 部署前的鉴权配置（本次不执行）
 
-Cloudflare Access 挡人读页面和 GET 接口，POST /v1/feed 对 Access 放行，只认绑定 from 的 agent token。Access 预留位置在 wrangler.toml 和 src/index.ts；应用目前不验证 Access JWT，本地匿名读接口不具备生产安全边界。禁止直接上线当前骨架。若 Access 按路径 Bypass，必须验证 GET /v1/feed 仍被保护（采用适当策略/网关方法规则），不能因 POST 放行而暴露读取。生产者 Authorization 无权读或管理。
+Cloudflare Access 挡人读页面和 GET 接口，POST /v1/feed 对 Access 放行，只认绑定 from 的 agent token。应用已对非 local/test 环境的 GET /v1/* 独立校验 Cf-Access-Jwt-Assertion：使用配置团队 JWKS 验 RS256 签名，并验证 issuer、aud、exp 和可选 nbf/iat；失败返回 401。ACCESS_TEAM_DOMAIN 与 ACCESS_AUD 仅私密注入，缺配置失败关闭。显式 local/test 在没有该 header 时兼容本地读；携带无效 header 仍拒绝。页面的第一层 Access 应用仍待第 5 步创建。第 4 步不部署；仓库配置仅供本地开发，私密配置需使用 production 环境标记，不能直接部署本地配置。若 Access 按路径 Bypass，必须验证 GET /v1/feed 仍被保护（采用适当策略/网关方法规则），不能因 POST 放行而暴露读取。生产者 Authorization 无权读或管理。
 
 不要将真实账户、域名、watchlist、lots、价格规则、token、Cloudflare 凭证回填到公开仓库。真实数据只存私有 D1。
 
 ## GitHub
 
-已关联用户指定的公共仓库，main 为初始化分支。请在 在 Settings → Code security 中确认 Secret scanning 与 Push protection 已开启；不要提交密钥去测试。CI 在 push / pull_request 运行 lint + test，权限仅 contents: read。
+已关联用户指定的公共仓库，main 为初始化分支。请在 Settings → Code security 中确认 Secret scanning 与 Push protection 已开启；不要提交密钥去测试。CI 在 push / pull_request 运行 lint + test，权限仅 contents: read。
 
 依赖仅开发工具 Wrangler 与 TypeScript：后者用于指定 TypeScript 技术栈的编译及严格类型检查，兼任 lint，无运行时第三方依赖；测试使用 Node 自带框架。[Cloudflare 本地 D1 文档](https://developers.cloudflare.com/d1/best-practices/local-development/)与[静态资源绑定文档](https://developers.cloudflare.com/workers/static-assets/binding/)说明本地绑定和同仓静态资源机制。
 
@@ -60,3 +60,5 @@ Cloudflare Access 挡人读页面和 GET 接口，POST /v1/feed 对 Access 放�
 - [P1 本地验收与限制](docs/P1-VALIDATION.md)
 
 - [Agent 接入指南](docs/AGENT-ONBOARDING.md)
+
+第 4 步的真实标识只存在 Git 忽略的 wrangler.local.toml；主人本地清单位于 .launch-private/OWNER-CHECKLIST.md。不要把这两个文件提交或复制到公共报告。JWT 使用 Worker 原生 Web Crypto，无新增依赖；实现依据 [Cloudflare JWT 验证文档](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/)。JWKS 缓存最多五分钟，未知 kid 失败关闭，缓存到期后重新获取。

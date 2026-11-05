@@ -8,6 +8,8 @@ export interface Env {
   DB: { prepare(sql: string): Statement };
   ASSETS: { fetch(request: Request): Promise<Response> };
   ENVIRONMENT?: string;
+  ACCESS_TEAM_DOMAIN?: string;
+  ACCESS_AUD?: string;
   [key: string]: unknown;
 }
 export type Feed = Record<string, unknown>;

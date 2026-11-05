@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 第 4 步准备：增加 GET API 的 Access JWT 第二道校验与测试、私密配置忽略规则；POST agent 鉴权不变，无新增依赖，不部署。
+
 - 按 owner 授权增加标的只读 lots 详情，使用公开协议虚构 fixture；列表无成本、写 token 禁读、空值不猜。
 
 - 压缩页头并使全局筛选条吸顶，保留原有筛选功能。

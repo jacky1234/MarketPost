@@ -2,7 +2,8 @@ name = "marketpost"
 main = "src/index.ts"
 compatibility_date = "2026-11-01"
 # account_id = "<CLOUDFLARE_ACCOUNT_ID>"
-# 自定义域名待确认，不配置 routes；禁止部署。
+# routes = [{ pattern = "<CUSTOM_DOMAIN>", custom_domain = true }]
+# 自定义域名待主人确认；占位注释不生效，禁止部署。
 workers_dev = false
 preview_urls = false
 
@@ -14,7 +15,7 @@ run_worker_first = true
 [vars]
 ENVIRONMENT = "local"
 # Cloudflare Access 预留：部署前保护页面和 GET；POST /v1/feed 路径放行。
-# 本次不验证 Access JWT，不提供生产环境读鉴权。
+# GET /v1/* 在非 local/test 环境强制校验 JWT；ACCESS_TEAM_DOMAIN / ACCESS_AUD 私密注入。
 
 [[d1_databases]]
 binding = "DB"

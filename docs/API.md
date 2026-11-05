@@ -1,6 +1,6 @@
 # P1 查询约定
 
-正式访问控制等单独确认；本地 GET 匿名可读，所有带 Authorization 的读取继续拒绝。生产者 token 只能 POST feed。reader token 等 P2，见 DECISIONS.md。
+Access 应用创建与部署仍待单独确认。GET /v1/* 在非 local/test 环境必须通过 Access JWT 签名/issuer/aud/时效校验，否则 401；本地/测试无 assertion 时保持匿名兼容，有 assertion 时必须有效。所有带 Authorization 的读取继续拒绝。生产者 token 只能 POST feed。reader token 等 P2，见 DECISIONS.md。
 
 - GET /v1/feed：from/type/symbol/trading_day 精确匹配；q 对名称、代码、标题、摘要、正文做字面子串搜索；limit 默认 30，范围 1–100；cursor 与当前筛选条件绑定。响应 {items, next_cursor}，next_cursor=null 表示结束。下一页保持筛选原样，把 next_cursor 作为 cursor 传回。按实际发布时间与 id 倒序，urgent 的列表置顶由时间流在已加载内容内展示。
 - GET /v1/feed/{id}：返回完整信封；不存在 404。

@@ -47,7 +47,7 @@ lint 使用 TypeScript 严格类型检查。测试框架使用 Node 内建 node:
 
 Cloudflare Access 保护看板读取域的页面和 GET 接口；独立投递域由主人配置整域 Bypass，POST /v1/feed 只认绑定 from 的 agent token。投递/读取地址见 docs/API.md。应用已对非 local/test 环境的 GET /v1/* 独立校验 Cf-Access-Jwt-Assertion：使用配置团队 JWKS 验 RS256 签名，并验证 issuer、aud、exp 和可选 nbf/iat；失败返回 401。ACCESS_TEAM_DOMAIN 与 ACCESS_AUD 仅私密注入，缺配置失败关闭。显式 local/test 在没有该 header 时兼容本地读；携带无效 header 仍拒绝。页面的第一层 Access 应用仍待第 5 步创建。第 4 步不部署；仓库配置仅供本地开发，私密配置需使用 production 环境标记，不能直接部署本地配置。Access 的路径匹配不区分方法，因此不能在看板域为 /v1/feed 建立路径 Bypass；应使用独立投递域。生产者 Authorization 无权读或管理。
 
-不要将真实账户、watchlist、lots、价格规则、token、Cloudflare 凭证回填到公开仓库。真实数据只存私有 D1。服务地址仅在主人明确授权的文档中公开。
+不要将真实账户、域名、watchlist、lots、价格规则、token、Cloudflare 凭证回填到公开仓库。真实数据只存私有 D1。
 
 ## GitHub
 

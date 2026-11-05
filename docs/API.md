@@ -2,10 +2,10 @@
 
 ## 生产地址（step 5.1）
 
-本轮主人明确授权在本文与 Agent 接入指南公开以下服务地址；token、账号标识、团队域和 AUD 仍只走私密配置。
+服务地址不进公开仓库。以下仅说明读写分工，真实地址由主人在接入时随 token 一并私密交付。
 
-- 投递：`POST <投递地址>/v1/feed`，仅使用绑定 from 的 agent Bearer token。
-- 读取与看板：`<看板地址>`，浏览器 GET API 同源请求，经过 Access 登录并由 Worker 再验证 JWT。
+- 投递：`POST <投递地址>/v1/feed`，地址由主人接入时私下提供，仅使用绑定 from 的 agent Bearer token。
+- 读取与看板：`<看板/读取地址>`（由主人私下提供），浏览器 GET API 同源请求，经过 Access 登录并由 Worker 再验证 JWT。
 - 投递域的匿名 `GET /v1/feed` 仍返回 401，不向 agent 暴露读取能力；无 token 的 POST 同样 401。
 - Access 按路径匹配不区分 HTTP 方法，因此不再为看板域的 `/v1/feed` 配置路径 Bypass。主人已将投递 Bypass 应用迁至独立投递域（无路径）；本次不修改 Access 应用或 ACCESS_*。
 

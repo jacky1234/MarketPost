@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Step 5.1：将生产者投递入口拆为独立子域名，保留看板读取域，修复 Access 路径 Bypass 导致浏览器 GET 缺 JWT；更新接入指南与地址说明。
+- 按主人裁决撤回公开服务地址，接入文档恢复占位，地址随 token 私密交付。
+
+- 投递域拆分（step 5.1）：保留看板读取域，修复 Access 路径 Bypass 导致浏览器 GET 缺 JWT。
 
 - 第 4 步准备：增加 GET API 的 Access JWT 第二道校验与测试、私密配置忽略规则；POST agent 鉴权不变，无新增依赖，不部署。
 

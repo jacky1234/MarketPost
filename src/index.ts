@@ -22,7 +22,10 @@ async function route(request: Request, env: Env): Promise<Response> {
     return json({id:stored.id,deduplicated:result.meta.changes === 0},result.meta.changes ? 201 : 200);
   }
   // 第一层 Access 留到部署时配置；此处独立验证读 API 的 JWT。
-  if (path.startsWith('/v1/') && request.headers.has('authorization')) return json({error:'Producer credentials have no read or management permission'},401);
+  if (path.startsWith('/v1/') && request.headers.has('authorization')) {
+    if (env.ENVIRONMENT !== 'local' && env.ENVIRONMENT !== 'test') console.warn('access_jwt_rejected', {reason:'authorization_header_not_allowed'});
+    return json({error:'Producer credentials have no read or management permission'},401);
+  }
   if (method === 'GET' && path.startsWith('/v1/') && !(await hasAccess(request, env))) return json({error:'Unauthorized'},401);
   if (path === '/v1/feed' && method === 'GET') return json(await listFeed(url,env));
   if (path === '/v1/agents' && method === 'GET') {

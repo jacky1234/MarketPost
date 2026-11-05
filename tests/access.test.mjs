@@ -58,3 +58,11 @@ test('POST feed 不依赖 Access，Access JWT 不能代替 agent token，写 tok
  const read=new Request('http://localhost/v1/watchlist',{headers:{authorization:`Bearer ${secret}`,'Cf-Access-Jwt-Assertion':await token()}});
  assert.equal((await worker.fetch(read,{...postEnv,DB})).status,401);
 });
+
+test('JWT 诊断日志仅固定原因码，不输出票据或配置值',async()=>{
+ const previous=console.warn,logs=[];console.warn=(...args)=>logs.push(args);
+ const assertion=await token({aud:[randomUUID()]});
+ try{assert.equal(await hasAccess(request(assertion),env),false);}finally{console.warn=previous;}
+ assert.deepEqual(logs,[['access_jwt_rejected',{reason:'aud_mismatch'}]]);
+ const text=JSON.stringify(logs);assert.equal(text.includes(assertion),false);assert.equal(text.includes(issuer),false);assert.equal(text.includes(audience),false);
+});

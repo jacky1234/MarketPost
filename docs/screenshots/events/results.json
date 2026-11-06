@@ -1,0 +1,22 @@
+[
+  {
+    "name": "390-upcoming",
+    "viewport": 390,
+    "scrollWidth": 390
+  },
+  {
+    "name": "390-recent",
+    "viewport": 390,
+    "scrollWidth": 390
+  },
+  {
+    "name": "390-day-empty",
+    "viewport": 390,
+    "scrollWidth": 390
+  },
+  {
+    "name": "390-far-empty",
+    "viewport": 390,
+    "scrollWidth": 390
+  }
+]

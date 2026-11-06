@@ -10,12 +10,13 @@ export function decode(row: Feed): Feed {
 }
 export async function listFeed(url: URL, env: Env) {
   const p=url.searchParams, where:string[]=[], values:unknown[]=[];
-  for(const key of p.keys()) if(!['from','type','symbol','trading_day','q','limit','cursor'].includes(key)) throw new QueryError('未知参数 '+key);
+  for(const key of p.keys()) if(!['from','type','symbol','trading_day','published_day','q','limit','cursor'].includes(key)) throw new QueryError('未知参数 '+key);
   for(const [key,col] of Object.entries({from:'from_agent',type:'type',symbol:'symbol',trading_day:'trading_day'})) if(p.get(key)){where.push(`${col} = ?`);values.push(p.get(key));}
   if(p.get('trading_day') && !date(p.get('trading_day')!)) throw new QueryError('无效 trading_day');
+  if(p.has('published_day')){const day=p.get('published_day')!;if(!date(day))throw new QueryError('无效 published_day');where.push("date(published_at, '+8 hours') = ?");values.push(day);}
   const q=p.get('q'); if(q){if(q.length>200) throw new QueryError('q 最多 200 字符');where.push("instr(lower(coalesce(name,'') || ' ' || coalesce(symbol,'') || ' ' || title || ' ' || coalesce(summary,'') || ' ' || coalesce(body_md,'')), lower(?)) > 0");values.push(q);}
   const size=p.get('limit')??'30';if(!/^[1-9]\d*$/.test(size)||Number(size)>100) throw new QueryError('limit 必须为 1–100 整数');
-  const limit=Number(size), filter=JSON.stringify(['from','type','symbol','trading_day','q'].map(k=>p.get(k)||''));
+  const limit=Number(size), filter=JSON.stringify(['from','type','symbol','trading_day','q'].map(k=>p.get(k)||'').concat(p.has('published_day')?[p.get('published_day')!]:[]));
   if(p.has('cursor')){
     try {
       const c=JSON.parse(decodeURIComponent(atob(p.get('cursor')!)));

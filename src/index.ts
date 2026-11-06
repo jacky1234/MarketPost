@@ -46,7 +46,7 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (method === 'GET' && /^\/v1\/feed\/[^/]+$/.test(path)) {
     let id: string; try { id=decodeURIComponent(path.slice('/v1/feed/'.length)); } catch {throw new QueryError('无效 id');}
     const row=await env.DB.prepare('SELECT * FROM feed_items WHERE id = ?').bind(id).first();
-    return row?json(decode(row)):json({error:'Not found'},404);
+    return row?json({...decode(row),data_raw:row.data_json}):json({error:'Not found'},404);
   }
   if (method === 'GET' && path === '/v1/events') {
     const from=url.searchParams.get('from'),to=url.searchParams.get('to');

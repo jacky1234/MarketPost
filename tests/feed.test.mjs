@@ -92,3 +92,21 @@ test('标的详情只读 lots：按标的隔离，保留 NULL，列表无成本�
  assert.equal((await get('/v1/watchlist/%E0%A4%A')).status,400);
  await env.DB.prepare("UPDATE watchlist SET active = 0 WHERE symbol = 'ABCD.US'").run();assert.equal((await get('/v1/watchlist/ABCD.US')).status,404);
 });
+test('published_day 按上海日期过滤，可组合交易日且游标隔离',async()=>{
+ const item={...example,id:randomUUID(),idempotency_key:'muse:manual:published:09999.HK:2026-11-01',trading_day:'2026-11-01',published_at:'2026-11-04T16:00:00Z'};
+ assert.equal((await post(item)).status,201);
+ const before={...item,id:randomUUID(),idempotency_key:item.idempotency_key+':before',published_at:'2026-11-04T15:59:59Z'};assert.equal((await post(before)).status,201);
+ let body=await(await get('/v1/feed?published_day=2026-11-05&trading_day=2026-11-01')).json();assert.equal(body.items.length,1);assert.equal(body.items[0].id,item.id);
+ body=await(await get('/v1/feed?published_day=2026-11-04&trading_day=2026-11-01')).json();assert.deepEqual(body.items.map(x=>x.id),[before.id]);
+ for(const d of ['','bad','2026-02-30'])assert.equal((await get('/v1/feed?published_day='+d)).status,400);
+ const page=await(await get('/v1/feed?published_day=2026-11-03&limit=1')).json();assert.ok(page.next_cursor);assert.equal((await get('/v1/feed?published_day=2026-11-04&cursor='+encodeURIComponent(page.next_cursor))).status,400);
+});
+
+test('详情 data_raw 按字节返回存储 JSON，保留空格和数字写法，data 仍解析',async()=>{
+ const id=randomUUID(),raw='{  "close" : 5.000e+1,\n\t"zero": -0.00, "note" : "虚构数据", "ratio": 1.2300e-2  }';
+ await env.DB.prepare('INSERT INTO feed_items(id,idempotency_key,type,from_agent,producer,published_at,title,data_json) VALUES(?,?,?,?,?,?,?,?)').bind(id,'codex:manual:raw:'+id,'price_snapshot','codex','manual','2026-11-03T16:00:00+08:00','虚构原文保真 fixture',raw).run();
+ const response=await get('/v1/feed/'+id);assert.equal(response.status,200);const detail=await response.json();
+ assert.equal(typeof detail.data_raw,'string');assert.deepEqual(Buffer.from(detail.data_raw,'utf8'),Buffer.from(raw,'utf8'));assert.deepEqual(detail.data,{close:50,zero:0,note:'虚构数据',ratio:0.0123});
+ const listed=await(await get('/v1/feed?from=codex&q='+encodeURIComponent('虚构原文保真 fixture'))).json();assert.equal('data_raw' in listed.items[0],false);
+ assert.equal((await get('/v1/feed/'+id,{Authorization:`Bearer ${tokens.codex}`})).status,401);
+});

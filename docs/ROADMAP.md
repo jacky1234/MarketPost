@@ -86,3 +86,12 @@
 - 已定位并修复 JWKS Request 的 workerd 兼容问题，已部署。
 - 真实 JWT 读取、匿名登录保护及投递冒烟均通过；完整测试 24/24。
 - 服务地址由主人私下保管；验收后清理虚构 smoke 数据。
+
+
+## 看板体验优化（2026-11-06）
+
+- 已完成安全 Markdown、结构化 signals、body_md/data_raw 原文复制、手机筛选栏与全屏详情、状态折叠、内容计数/空态、今日发布视角。
+- 新增可选 published_day（上海日期，与 trading_day 可组合）；按 D005 新增详情 data_raw，只读返回存储 JSON，现有 data 不变。
+- lint 与全套 26/26 测试通过；390×844、360×844 逐 Tab 测量无页面横向溢出，桌面状态卡片和分页计数通过。本地真实 D1/API 到复制按钮的原文比对通过。
+- 详细验证与截图见 [看板体验验证](P1-EXPERIENCE-VALIDATION.md)；实际手机剪贴板权限、Safari 安全区与软键盘待主人复核。
+- PROTOCOL.md、信封校验、Access 与 producer token 不变；无新增依赖。本轮重新部署结果与时间见交付回复，服务地址由主人私下保管。

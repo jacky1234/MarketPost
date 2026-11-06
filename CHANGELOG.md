@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 看板体验：安全 Markdown、结构化信号、原文复制、手机筛选与详情 sheet、心跳独立计数、今日发布视角；增加 published_day 查询参数及经 D005 授权的详情 data_raw 只读扩展，协议、Access 与 producer token 不变。
+
 - 原样保存全部生产者 token 轮换提示词供后续使用，本次未执行轮换。
 
 - Step 5.2：修复 JWKS 请求的 workerd redirect 兼容错误导致合法 Access JWT 恒定 401；保留跳转拒绝与全部验证条件，增加原生运行时和日志脱敏回归。

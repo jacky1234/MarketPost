@@ -16,7 +16,7 @@ try{for(const width of [390,360]){
  if(u.pathname.startsWith('/v1/feed/'))data=item;
  else if(u.pathname==='/v1/feed'){const visible=u.searchParams.has('published_day')||u.searchParams.get('trading_day')==='2026-11-01';data={items:visible?[item,{...item,id:'hb',type:'system_heartbeat'}]:[],next_cursor:null};}
  else if(u.pathname==='/v1/health/producers')data={producers:[{from:'codex',producer:'manual',state:'fresh'}]};else data={items:[]};await route.fulfill({json:data});});
- const loaded=()=>page.waitForFunction(()=>document.querySelector('#feedback').textContent.startsWith('已加载'));
+ const loaded=()=>page.waitForFunction(()=>/^(已加载|已读取事件日历)/.test(document.querySelector('#feedback').textContent));
  await page.goto('http://127.0.0.1:8787/?day=2026-11-01');await loaded();assert.match(await page.locator('#feedback').innerText(),/已加载 1 条/);assert.match(await page.locator('#filters select[name=from]').innerText(),/codex · 1/);assert.equal(await page.locator('#producer-status').getAttribute('open'),null);
  await touchSizes(page);await noOverflow(page);
  for(const field of await page.locator('#filters label').all()){const b=await field.boundingBox();assert.ok(b.width>=width-40);}
@@ -36,12 +36,12 @@ try{for(const width of [390,360]){
  await desktop.route('**/v1/**',async route=>{const u=new URL(route.request().url());let data;
  if(u.pathname==='/v1/feed')data=u.searchParams.has('cursor')?{items:content.slice(50),next_cursor:null}:{items:[...content.slice(0,50),{...item,id:'hb',type:'system_heartbeat'}],next_cursor:'fixture-next'};
  else if(u.pathname==='/v1/health/producers')data={producers:[{from:'codex',producer:'manual',state:'fresh'}]};else data={items:[]};await route.fulfill({json:data});});
- const done=()=>desktop.waitForFunction(()=>document.querySelector('#feedback').textContent.startsWith('已加载'));
+ const done=()=>desktop.waitForFunction(()=>/^(已加载|已读取事件日历)/.test(document.querySelector('#feedback').textContent));
  await desktop.goto('http://127.0.0.1:8787/?day=2026-11-01&tab='+encodeURIComponent('时间流'));await done();assert.match(await desktop.locator('#feedback').innerText(),/已加载 50 条/);assert.match(await desktop.locator('[name=from]').innerText(),/全部来源 · 60/);assert.match(await desktop.locator('[name=from]').innerText(),/codex · 30/);await desktop.locator('#more').click();assert.match(await desktop.locator('#feedback').innerText(),/已加载 60 条/);await desktop.locator('[name=from]').selectOption('codex');await done();assert.match(await desktop.locator('#feedback').innerText(),/已加载 30 条/);assert.equal(await desktop.locator('.health').isVisible(),true);assert.ok((await desktop.locator('.health').boundingBox()).height>40);await noOverflow(desktop);await desktop.close();results.push({desktop:true,passed:true,checks:['跨API分页汇总来源计数','heartbeat不计入60条内容','本地50条展示分页','来源筛选30条','桌面状态卡片保留']});
 
  if(process.env.LOCAL_FIXTURE_CHECK==='1'){
   const real=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});let captured;await real.exposeFunction('captureCopy',value=>captured=value);await real.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{value:{writeText:async value=>window.captureCopy(value)}}));
-  await real.goto('http://127.0.0.1:8787/?day=2026-11-03');await real.waitForFunction(()=>document.querySelector('#feedback').textContent.startsWith('已加载'));
+  await real.goto('http://127.0.0.1:8787/?day=2026-11-03');await real.waitForFunction(()=>/^(已加载|已读取事件日历)/.test(document.querySelector('#feedback').textContent));
   const detail=await real.evaluate(async()=>await(await fetch('/v1/feed/90000000-0000-4000-8000-000000000001')).json());
   assert.equal(detail.data_raw,'{"open": 51, "high": 52, "low": 49, "close": 50, "change_pct": -2, "volume": 10000, "volume_ratio": 1}');
   await real.locator('article').filter({has:real.getByRole('heading',{name:detail.title,exact:true})}).filter({hasText:detail.from+' / '+detail.producer}).getByRole('button',{name:'查看详情',exact:true}).click();await real.getByRole('button',{name:'复制原文',exact:true}).click();assert.equal(captured,detail.body_md);await real.getByRole('button',{name:'复制数据',exact:true}).click();assert.equal(captured,detail.data_raw);await noOverflow(real);await real.screenshot({path:new URL('390-local-d1-detail.png',out).pathname});await real.close();results.push({localD1:true,passed:true,checks:['真实本地详情接口保留fixture JSON空格','body_md经真实接口到Clipboard逐字相同','data_raw经真实接口到Clipboard逐字相同']});

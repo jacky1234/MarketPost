@@ -40,3 +40,31 @@ npm run dev
 ## JWT 运行时兼容与诊断
 
 JWKS 使用 redirect:manual，并拒绝非 2xx 响应，不跟随任何跳转。workerd 不支持 redirect:error；已添加原生 workerd 回归测试，避免只在 Node mock 中通过。生产拒绝日志仅输出 access_jwt_rejected 与固定原因码，不记录票据、声明值或身份。
+
+
+## 事件登记
+
+事件由主人在本机通过 Wrangler 执行 SQL 登记，不经 feed 自动转换，也不新增写入接口。真实种子文件放在 Git 忽略的 `.launch-private/events-seed.sql`，仅本机保管，不提交、不粘贴到公开报告。生产配置继续来自未跟踪的 `wrangler.local.toml`。
+
+下面仅为虚构示意，标的与日期都不代表真实事件。将审核后的内容写入本地私密种子；使用 INSERT OR REPLACE 时，同 id 的登记会被覆盖，执行前核对内容。
+
+```sql
+INSERT OR REPLACE INTO events
+(id, symbol, market, event_type, title, event_date, timezone, importance, description, source_url, status)
+VALUES ('evt-demo-2099-01-15', '09999.HK', 'HK', 'other', '虚构事件',
+        '2099-01-15', 'Asia/Shanghai', 'normal', '仅用于示意的虚构登记', '', 'upcoming');
+```
+
+主人本机操作：
+
+```sh
+npx wrangler d1 execute DB --remote --config wrangler.local.toml --file .launch-private/events-seed.sql
+# --file 返回执行统计；另用 SELECT 核验实际行数、日期、状态与其他关键字段。
+# 查询结果仅在本机查看，公开交付只报告汇总。
+```
+
+无确切日的窗口事件暂不登记；不得把季度末、窗口末日等当作真实日期。source_url 无可靠来源时留空，不编造链接。
+
+事件 Tab 默认「即将到来」，调用既有 GET /v1/events?from=&to=：上海今日到今日 +30 天（日期差 0–30，含起止日），按日期升序分组。每条展示日期差、importance、symbol、标题与登记时区；倒计时不换算事件发生的具体时刻。选择上方日期或「指定日期」可看单日，再点「即将到来」恢复默认范围。共享登记不按 agent 或关键词筛选；下方事件投递仍继承所选交易日、来源和搜索。
+
+当前范围为空时，按上海今日为起点查询既有接口的所有未来登记，仅展示其中最近一条提示；因此也能提示 30 天外事件。没有未来登记时明确显示空态，不沿用旧数据。近 7 天（今日 -7 至昨日）放在底部默认折叠区，日期已过即灰显，原 upcoming 状态不改库。读取失败继续使用重试提示，不伪装为空库。

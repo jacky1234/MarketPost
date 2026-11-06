@@ -11,8 +11,8 @@
 
 服务已部署。GET /v1/* 在非 local/test 环境必须通过 Access JWT 签名/issuer/aud/时效校验，否则 401；本地/测试无 assertion 时保持匿名兼容，有 assertion 时必须有效。所有带 Authorization 的读取继续拒绝。生产者 token 只能 POST feed。reader token 等 P2，见 DECISIONS.md。
 
-- GET /v1/feed：from/type/symbol/trading_day 精确匹配；q 对名称、代码、标题、摘要、正文做字面子串搜索；limit 默认 30，范围 1–100；cursor 与当前筛选条件绑定。响应 {items, next_cursor}，next_cursor=null 表示结束。下一页保持筛选原样，把 next_cursor 作为 cursor 传回。按实际发布时间与 id 倒序，urgent 的列表置顶由时间流在已加载内容内展示。
-- GET /v1/feed/{id}：返回完整信封；不存在 404。
+- GET /v1/feed：from/type/symbol/trading_day 精确匹配；可选 published_day=YYYY-MM-DD 按 published_at 的上海日期过滤，可与 trading_day 组合；缺省行为不变。q 对名称、代码、标题、摘要、正文做字面子串搜索；limit 默认 30，范围 1–100；cursor 与当前筛选条件绑定。响应 {items, next_cursor}，next_cursor=null 表示结束。下一页保持筛选原样，把 next_cursor 作为 cursor 传回。按实际发布时间与 id 倒序，urgent 的列表置顶由时间流在已加载内容内展示。
+- GET /v1/feed/{id}：返回完整信封，并增加只读响应字段 data_raw，直接以字符串返回数据库 data_json 原文，不解析再序列化；现有 data 解析字段保持不变。正常写入的 JSON null 对应 data_raw 为字符串 "null"，历史 SQL NULL 对应 null。该字段不属于 POST 信封，列表响应不增加此字段；不存在 404。见 DECISIONS.md D005。
 - GET /v1/agents?trading_day=YYYY-MM-DD：当天出现过的 agent 与条数，缺日期时汇总历史。响应 {agents:[{from,count}]}。
 - GET /v1/watchlist：共享 active 关注池，不返回 lots/成本；不是 P2 的基础 reader 投影。
 - GET /v1/watchlist/{symbol}：owner 本轮授权的只读标的详情扩展，响应 {item,lots}；仅 active 标的，未知/停用 404；lots 按标的隔离、NULL 原样保留。与其他人类本地读接口一样，带 Authorization 的请求拒绝。部署后须由 Access 保护；P2 reader 不获 lots。
@@ -22,9 +22,9 @@
 - 无效分页/日期/cursor：400，code=invalid_query；存储失败：500，不回显 SQL/凭证。
 - 不完整观点：400，code=view_incomplete，逐字段 errors；不入库、不消耗幂等键，补全后同 key 重发。服务端永不生成 partial。
 
-日期以 trading_day 过滤，绝不拿 published_at 日期代替交易日。分页不保证插入过程中的快照隔离。共享表不具有 agent 归属，界面单独标注；feed/heartbeat 按日期与 agent 真实过滤。
+trading_day 只过滤归档交易日，published_day 只过滤上海发布日期，二者独立。看板「今日发布」模式跨归档交易日展示当天发布内容，仍标注每条交易日；heartbeat 仅展示在生产者状态区，不计入内容条数与来源选择器计数。分页不保证插入过程中的快照隔离。共享表不具有 agent 归属，界面单独标注。
 
-看板正文以 Markdown 原文安全展示，不执行 HTML；来源仅放行 http/https 链接，所有生产者文本按 textContent 渲染。详情的观点对照限当前已加载同日同标的其他 agent 内容。持仓页通过只读标的详情弹层展示当前登记分笔（不是历史日或 agent 归属数据）；技术面展示生产者已计算字段与信号，完整 K 线图仍待后续实现。
+看板正文通过 DOM 节点渲染标题、列表、加粗、代码与链接，不解释原文 HTML；正文与来源链接仅放行 http/https，其余按文本转义。详情的观点对照限当前已加载同日同标的其他 agent 内容。持仓页通过只读标的详情弹层展示当前登记分笔（不是历史日或 agent 归属数据）；技术面展示生产者已计算字段与信号，完整 K 线图仍待后续实现。
 
 ## 本地虚构数据验收
 

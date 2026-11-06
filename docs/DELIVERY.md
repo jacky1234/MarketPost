@@ -123,3 +123,12 @@
 - 修复后：真实 JWT GET limit=1 为 200，按 2099-01-01 查询为 200 且能读到 smoke；匿名 GET 仍为 Access 302；投递域带 muse token POST 201、匿名 GET 401、无 token POST 401。新增虚构 smoke 的 tags=[smoke]，trading_day=2099-01-01，验收后由主人清理。
 - lint 通过；完整测试 24/24 通过，新增原生 workerd 正向验签、JWKS 跳转拒绝与诊断日志脱敏回归。仅使用 Wrangler 已锁定的原生运行时依赖，无新增依赖。
 - 已重新部署修复；服务地址由主人私下保管。协议、提交版占位配置、Access 策略与既有 agent token 不变。
+
+
+## 看板体验优化（2026-11-06）
+
+- 已完成安全 Markdown、结构化 signals、body_md/data_raw 原文复制、手机筛选栏与全屏详情、状态折叠、内容计数/空态、今日发布视角。
+- 新增可选 published_day（上海日期，与 trading_day 可组合）；按 D005 新增详情 data_raw，只读返回存储 JSON，现有 data 不变。
+- lint 与全套 26/26 测试通过；390×844、360×844 逐 Tab 测量无页面横向溢出，桌面状态卡片和分页计数通过。本地真实 D1/API 到复制按钮的原文比对通过。
+- 详细验证与截图见 [看板体验验证](P1-EXPERIENCE-VALIDATION.md)；实际手机剪贴板权限、Safari 安全区与软键盘待主人复核。
+- PROTOCOL.md、信封校验、Access 与 producer token 不变；无新增依赖。本轮重新部署结果与时间见交付回复，服务地址由主人私下保管。

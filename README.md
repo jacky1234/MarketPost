@@ -60,6 +60,7 @@ Cloudflare Access 保护看板读取域的页面和 GET 接口；独立投递域
 - [全部生产者 token 轮换提示词](docs/prompts/ROTATE-PRODUCER-TOKENS.md)（仅模板，明确授权后才执行）
 
 - [P1 本地验收与限制](docs/P1-VALIDATION.md)
+- [看板体验与手机布局验证](docs/P1-EXPERIENCE-VALIDATION.md)
 
 - [Agent 接入指南](docs/AGENT-ONBOARDING.md)
 

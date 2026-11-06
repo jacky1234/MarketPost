@@ -1,0 +1,134 @@
+[
+  {
+    "width": 390,
+    "height": 844,
+    "passed": true,
+    "measurements": [
+      {
+        "tab": 0,
+        "scrollWidth": 390,
+        "viewport": 390
+      },
+      {
+        "tab": 1,
+        "scrollWidth": 390,
+        "viewport": 390
+      },
+      {
+        "tab": 2,
+        "scrollWidth": 390,
+        "viewport": 390
+      },
+      {
+        "tab": 3,
+        "scrollWidth": 390,
+        "viewport": 390
+      },
+      {
+        "tab": 4,
+        "scrollWidth": 390,
+        "viewport": 390
+      },
+      {
+        "tab": 5,
+        "scrollWidth": 390,
+        "viewport": 390
+      },
+      {
+        "tab": 6,
+        "scrollWidth": 390,
+        "viewport": 390
+      }
+    ],
+    "checks": [
+      "Markdown DOM/XSS/links",
+      "结构化signals",
+      "响应body_md与data_raw逐字复制（mock）",
+      "Clipboard降级/恢复文案",
+      "纵向筛选/前后日",
+      "状态折叠",
+      "全屏sheet/关闭",
+      "计数/空态",
+      "今日发布",
+      "7Tab scrollWidth<=视口",
+      "可见触控目标宽高>=40px",
+      "长JSON不撑宽"
+    ]
+  },
+  {
+    "width": 360,
+    "height": 844,
+    "passed": true,
+    "measurements": [
+      {
+        "tab": 0,
+        "scrollWidth": 360,
+        "viewport": 360
+      },
+      {
+        "tab": 1,
+        "scrollWidth": 360,
+        "viewport": 360
+      },
+      {
+        "tab": 2,
+        "scrollWidth": 360,
+        "viewport": 360
+      },
+      {
+        "tab": 3,
+        "scrollWidth": 360,
+        "viewport": 360
+      },
+      {
+        "tab": 4,
+        "scrollWidth": 360,
+        "viewport": 360
+      },
+      {
+        "tab": 5,
+        "scrollWidth": 360,
+        "viewport": 360
+      },
+      {
+        "tab": 6,
+        "scrollWidth": 360,
+        "viewport": 360
+      }
+    ],
+    "checks": [
+      "Markdown DOM/XSS/links",
+      "结构化signals",
+      "响应body_md与data_raw逐字复制（mock）",
+      "Clipboard降级/恢复文案",
+      "纵向筛选/前后日",
+      "状态折叠",
+      "全屏sheet/关闭",
+      "计数/空态",
+      "今日发布",
+      "7Tab scrollWidth<=视口",
+      "可见触控目标宽高>=40px",
+      "长JSON不撑宽"
+    ]
+  },
+  {
+    "desktop": true,
+    "passed": true,
+    "checks": [
+      "跨API分页汇总来源计数",
+      "heartbeat不计入60条内容",
+      "本地50条展示分页",
+      "来源筛选30条",
+      "桌面状态卡片保留"
+    ]
+  },
+  {
+    "localD1": true,
+    "passed": true,
+    "checks": [
+      "真实本地详情接口保留fixture JSON空格",
+      "body_md经真实接口到Clipboard逐字相同",
+      "data_raw经真实接口到Clipboard逐字相同"
+    ]
+  }
+]

@@ -1,19 +1,25 @@
 import type { Env, Feed } from './types.js';
 import { validate } from './validation.js';
 import { hasAccess } from './access.js';
+import { bearerPrincipal,requiredScope,type Principal } from './tokens.js';
 import { decode, listFeed, health, QueryError, date } from './queries.js';
 const json = (body: unknown, status = 200) => Response.json(body, {status, headers:{'Cache-Control':'no-store'}});
-const tokenName = (agent: string) => 'PRODUCER_TOKEN_' + agent.toUpperCase().replace(':','_');
 async function route(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url), path = url.pathname, method = request.method;
+  let principal:Principal|null=null;
+  if(path.startsWith('/v1/')&&(request.headers.has('authorization')||(method==='POST'&&path==='/v1/feed'))){
+    principal=await bearerPrincipal(request,env);if(!principal)return json({error:'Unauthorized'},401);
+    const scope=requiredScope(method,path);
+    if(!scope||!principal.scopes.includes(scope)||(method!=='GET'&&principal.kind==='reader'))return json({error:'Forbidden'},403);
+  }
   if (path === '/v1/feed' && method === 'POST') {
     if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) return json({errors:{body:'需要 application/json'}},400);
     let body: unknown;
     try { body = await request.json(); } catch { return json({errors:{body:'无效 JSON'}},400); }
+    if(body&&typeof body==='object'&&'from' in body&&typeof body.from==='string'&&body.from!==principal!.agent)return json({error:'Unauthorized'},401);
     const {item, errors} = validate(body);
     if (!item) return json({code: errors['view.basis'] || errors['view.invalidation'] ? 'view_incomplete' : 'validation_error',errors},400);
-    const expected = env[tokenName(item.from as string)];
-    if (typeof expected !== 'string' || !expected || request.headers.get('authorization') !== `Bearer ${expected}`) return json({error:'Unauthorized'},401);
+    if(item.from!==principal!.agent)return json({error:'Unauthorized'},401);
     const columns = ['id','idempotency_key','protocol_version','type','from_agent','producer','market','symbol','name','tier','trading_day','event_at','published_at','severity','status','title','summary','body_md','data_json','signals_json','sources_json','view_json','reply_to','tags'];
     const values = columns.map(c => c === 'from_agent' ? item.from : c.endsWith('_json') ? JSON.stringify(item[c.slice(0,-5)] ?? null) : c === 'tags' ? JSON.stringify(item.tags) : item[c] ?? null);
     const result = await env.DB.prepare(`INSERT INTO feed_items (${columns.join(',')}) VALUES (${columns.map(()=>'?').join(',')}) ON CONFLICT(idempotency_key) DO NOTHING`).bind(...values).run();
@@ -21,12 +27,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     if (!stored || stored.from_agent !== item.from) return json({error:'Conflicting identity'},409);
     return json({id:stored.id,deduplicated:result.meta.changes === 0},result.meta.changes ? 201 : 200);
   }
-  // 第一层 Access 留到部署时配置；此处独立验证读 API 的 JWT。
-  if (path.startsWith('/v1/') && request.headers.has('authorization')) {
-    if (env.ENVIRONMENT !== 'local' && env.ENVIRONMENT !== 'test') console.warn('access_jwt_rejected', {reason:'authorization_header_not_allowed'});
-    return json({error:'Producer credentials have no read or management permission'},401);
-  }
-  if (method === 'GET' && path.startsWith('/v1/') && !(await hasAccess(request, env))) return json({error:'Unauthorized'},401);
+  if (!principal && method === 'GET' && path.startsWith('/v1/') && !(await hasAccess(request, env))) return json({error:'Unauthorized'},401);
   if (path === '/v1/feed' && method === 'GET') return json(await listFeed(url,env));
   if (path === '/v1/agents' && method === 'GET') {
     const d = url.searchParams.get('trading_day');
@@ -34,8 +35,9 @@ async function route(request: Request, env: Env): Promise<Response> {
     const rows = await env.DB.prepare('SELECT from_agent AS "from", COUNT(*) AS count FROM feed_items'+(d?' WHERE trading_day = ?':'')+' GROUP BY from_agent ORDER BY from_agent').bind(...(d?[d]:[])).all();
     return json({agents:rows.results});
   }
+  if (path === '/v1/watchlist' && method === 'GET' && principal) return json({items:(await env.DB.prepare('SELECT symbol, name, tier, proxy_symbol AS proxy FROM watchlist WHERE active = 1 ORDER BY sort_order, symbol').all()).results});
   if (path === '/v1/watchlist' && method === 'GET') return json({items:(await env.DB.prepare('SELECT symbol, market, name, tier, currency, proxy_symbol, thesis, active, sort_order, created_at, updated_at FROM watchlist WHERE active = 1 ORDER BY sort_order, symbol').all()).results});
-  // Owner 授权的标的详情；沿用人类本地读路径，Authorization 拒绝已在上方执行。
+  // 人类全量档案；Bearer 对该路径默认拒绝，watchlist:read 不覆盖 lots。
   if (method === 'GET' && /^\/v1\/watchlist\/[^/]+$/.test(path)) {
     let symbol: string; try {symbol=decodeURIComponent(path.slice('/v1/watchlist/'.length));} catch {throw new QueryError('无效 symbol');}
     const item=await env.DB.prepare('SELECT symbol, market, name, tier, currency, proxy_symbol, thesis FROM watchlist WHERE symbol = ? AND active = 1').bind(symbol).first();

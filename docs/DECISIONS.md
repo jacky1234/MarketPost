@@ -41,3 +41,12 @@ owner 在手机视觉和页头压缩之后明确授权“标的详情页 lots �
 为保证「复制数据逐字一致」，GET /v1/feed/{id} 新增只读响应字段 data_raw，直接返回数据库中 data_json 的原始 JSON 文本，不经过解析再序列化。现有 data 解析字段、其他字段、Access + JWT 鉴权及全部写入校验保持不变。
 
 这是只读响应扩展，不改协议信封；PROTOCOL.md 保持原文。不规则空格、换行与数字写法必须保留，并通过入库 fixture 的逐字节比对验证。data_raw 不进入列表响应，也不成为新的写入字段。
+
+
+## D006 — 可配置 scope 与 reader 权限（2026-11-11 主人裁决）
+
+本次以 api_tokens 的 SHA-256 哈希、agent、kind、scopes、期限与吊销状态进行逐请求授权，不缓存权限结论。有效凭证的 scope 不足为 403；无效、过期、吊销或 from 绑定不一致为 401。写入只允许 feed:write，reader 身份不写入。授权路由与生命周期见 [PERMISSIONS.md](PERMISSIONS.md)。
+
+本裁决取代 D001 中“全部 Bearer 读拒绝、reader 等 P2”的临时实现：获准 reader 可读 feed/events 及 watchlist 的 symbol/name/tier/proxy 四字段；不获得 lots、数量或成本。Access 人类读取保持完整。以原生 workerd 测试锁定出参身份分级。
+
+旧 producer secret 本版仅在无登记哈希行时兜底 feed:write，表中吊销/过期/权限不足绝不回退，数据库故障失败关闭；该回退留待后续版本移除。PROTOCOL.md 不改，本次作为获准的权限实现扩展记录。

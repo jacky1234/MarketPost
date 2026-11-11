@@ -24,7 +24,7 @@ async function withJWKS(fn){
  globalThis.fetch=async url=>{assert.equal(url,issuer+'/cdn-cgi/access/certs');calls++;return Response.json({keys:[jwk]});};
  try{return await fn(()=>calls);}finally{globalThis.fetch=previous;}
 }
-const DB={prepare(){return {bind(){return this;},async all(){return {results:[]};}};}};
+const DB={prepare(){return {bind(){return this;},async first(){return null;},async all(){return {results:[]};}};}};
 test('Access JWT 合法：JWKS RS256 验签与 aud，通过生产 GET 并缓存公钥',async()=>withJWKS(async calls=>{
  const assertion=await token();assert.equal((await worker.fetch(request(assertion),{...env,DB})).status,200);
  assert.equal(await hasAccess(request(assertion),env),true);assert.equal(calls(),1);
@@ -50,13 +50,13 @@ test('JWKS 获取失败不放行；不从 token 中的 jku 选择来源',async()
 });
 test('POST feed 不依赖 Access，Access JWT 不能代替 agent token，写 token 仍不能读',async()=>{
  const example=JSON.parse(await readFile(new URL('../examples/muse-post-market.json',import.meta.url)));const secret=randomBytes(32).toString('hex');
- const postEnv={...env,PRODUCER_TOKEN_MUSE:secret,DB:{prepare(){return {bind(){return this;},async run(){return {meta:{changes:1}};},async first(){return {id:example.id,from_agent:example.from};}};}}};
+ const postEnv={...env,PRODUCER_TOKEN_MUSE:secret,DB:{prepare(sql){return {bind(){return this;},async run(){return {meta:{changes:1}};},async first(){return sql.includes('api_tokens')?null:{id:example.id,from_agent:example.from};}};}}};
  const post=headers=>worker.fetch(new Request('http://localhost/v1/feed',{method:'POST',headers:{'content-type':'application/json',...headers},body:JSON.stringify(example)}),postEnv);
  assert.equal((await post({'Cf-Access-Jwt-Assertion':await token()})).status,401);
  assert.equal((await post({authorization:`Bearer ${secret}`})).status,201);
  assert.equal((await post({authorization:`Bearer ${secret}`,'Cf-Access-Jwt-Assertion':'invalid'})).status,201);
  const read=new Request('http://localhost/v1/watchlist',{headers:{authorization:`Bearer ${secret}`,'Cf-Access-Jwt-Assertion':await token()}});
- assert.equal((await worker.fetch(read,{...postEnv,DB})).status,401);
+ assert.equal((await worker.fetch(read,{...postEnv,DB})).status,403);
 });
 
 test('JWT 诊断日志仅固定原因码，不输出票据或配置值',async()=>{

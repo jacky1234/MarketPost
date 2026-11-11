@@ -14,7 +14,7 @@ before(async()=>{
  directory=await mkdtemp(join(tmpdir(),'marketpost-test-'));
  platform=await getPlatformProxy({persist:{path:directory}});
  env={...platform.env,PRODUCER_TOKEN_MUSE:tokens.muse,PRODUCER_TOKEN_CODEX:tokens.codex};
- const sql=await readFile(new URL('../migrations/0001_init.sql',import.meta.url),'utf8');
+ const sql=(await Promise.all(['0001_init.sql','0002_api_tokens.sql'].map(name=>readFile(new URL('../migrations/'+name,import.meta.url),'utf8')))).join('\n');
  for(const statement of sql.replace(/--[^\n]*/g,'').split(';').filter(s=>s.trim())) await env.DB.prepare(statement).run();
 });
 after(async()=>{await platform?.dispose();if(directory) await rm(directory,{recursive:true,force:true});});
@@ -31,12 +31,12 @@ test('同 key 重试幂等，不同 agent 同标的同日独立保存',async()=>
  assert.equal((await (await get('/v1/feed?from=codex&type=post_market')).json()).items.length,1);
  assert.equal((await (await get('/v1/agents?trading_day=2026-11-03')).json()).agents.length,2);
 });
-test('非法 JSON 与缺失 token 拒绝',async()=>{assert.equal((await worker.fetch(new Request('http://localhost/v1/feed',{method:'POST',headers:{'content-type':'application/json'},body:'{'}),env)).status,400);assert.equal((await worker.fetch(new Request('http://localhost/v1/feed',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(example)}),env)).status,401);});
+test('非法 JSON 与缺失 token 拒绝',async()=>{assert.equal((await worker.fetch(new Request('http://localhost/v1/feed',{method:'POST',headers:{'content-type':'application/json'},body:'{'}),env)).status,401);assert.equal((await worker.fetch(new Request('http://localhost/v1/feed',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(example)}),env)).status,401);});
 test('只读关注池不返回 lots，生产者无读权限',async()=>{
  await env.DB.prepare("INSERT INTO watchlist(symbol,market,name,tier) VALUES('09999.HK','HK','示例生物科技','core')").run();
  await env.DB.prepare("INSERT INTO watchlist_lots(lot_id,symbol,shares,cost) VALUES('demo-base','09999.HK',500,50)").run();
  const body=await (await get('/v1/watchlist')).json();assert.equal(body.items.length,1);for(const key of ['lots','shares','cost']) assert.equal(key in body.items[0],false);
- for(const path of ['/v1/watchlist','/v1/feed','/v1/agents']) assert.equal((await get(path,{Authorization:`Bearer ${tokens.muse}`})).status,401);
+ for(const path of ['/v1/watchlist','/v1/feed','/v1/agents']) assert.equal((await get(path,{Authorization:`Bearer ${tokens.muse}`})).status,403);
 });
 test('协议未实现接口返回 501',async()=>{for(const path of ['/v1/commands']) assert.equal((await get(path)).status,501);});
 
@@ -67,7 +67,7 @@ test('events 日期闭区间、alert rules JSON 与只读权限',async()=>{
  assert.equal((await (await get('/v1/events?from=2026-11-04')).json()).items.length,0);
  assert.equal((await get('/v1/events?from=2026-11-04&to=2026-11-03')).status,400);
  const rules=await (await get('/v1/alert-rules')).json();assert.deepEqual(rules.items[0].condition,{threshold:55});assert.equal('condition_json' in rules.items[0],false);
- for(const p of ['/v1/feed/'+example.id,'/v1/events','/v1/alert-rules','/v1/health/producers'])assert.equal((await get(p,{Authorization:`Bearer ${tokens.muse}`})).status,401);
+ for(const p of ['/v1/feed/'+example.id,'/v1/events','/v1/alert-rules','/v1/health/producers'])assert.equal((await get(p,{Authorization:`Bearer ${tokens.muse}`})).status,403);
 });
 test('heartbeat：最后一条、来源过滤、历史日与超时/缺失/失败',async()=>{
  const beat={...example,id:randomUUID(),type:'system_heartbeat',producer:'tech-job',trading_day:null,idempotency_key:'muse:tech-job:system_heartbeat:demo:1',event_at:'2026-11-03T16:00:00+08:00',data:{job:'tech-job',ran_at:'2026-11-03T16:00:00+08:00',result:'ok',note:'虚构运行'}};
@@ -87,7 +87,7 @@ test('标的详情只读 lots：按标的隔离，保留 NULL，列表无成本�
  const body=await response.json();assert.equal(body.item.symbol,'09999.HK');assert.equal(body.lots.length,2);assert.ok(body.lots.every(l=>l.symbol==='09999.HK'));assert.equal(body.lots.find(l=>l.lot_id==='demo-topup-20260101').cost,42);
  const missing=await (await get('/v1/watchlist/ABCD.US')).json();assert.equal(missing.lots[0].cost,null);assert.equal(missing.lots[0].shares,null);
  const list=await (await get('/v1/watchlist')).json();assert.ok(list.items.every(x=>!('lots'in x)&&!('cost'in x)&&!('shares'in x)));
- assert.equal((await get('/v1/watchlist/09999.HK',{Authorization:`Bearer ${tokens.muse}`})).status,401);
+ assert.equal((await get('/v1/watchlist/09999.HK',{Authorization:`Bearer ${tokens.muse}`})).status,403);
  assert.equal((await get('/v1/watchlist/unknown')).status,404);
  assert.equal((await get('/v1/watchlist/%E0%A4%A')).status,400);
  await env.DB.prepare("UPDATE watchlist SET active = 0 WHERE symbol = 'ABCD.US'").run();assert.equal((await get('/v1/watchlist/ABCD.US')).status,404);
@@ -108,5 +108,5 @@ test('详情 data_raw 按字节返回存储 JSON，保留空格和数字写法�
  const response=await get('/v1/feed/'+id);assert.equal(response.status,200);const detail=await response.json();
  assert.equal(typeof detail.data_raw,'string');assert.deepEqual(Buffer.from(detail.data_raw,'utf8'),Buffer.from(raw,'utf8'));assert.deepEqual(detail.data,{close:50,zero:0,note:'虚构数据',ratio:0.0123});
  const listed=await(await get('/v1/feed?from=codex&q='+encodeURIComponent('虚构原文保真 fixture'))).json();assert.equal('data_raw' in listed.items[0],false);
- assert.equal((await get('/v1/feed/'+id,{Authorization:`Bearer ${tokens.codex}`})).status,401);
+ assert.equal((await get('/v1/feed/'+id,{Authorization:`Bearer ${tokens.codex}`})).status,403);
 });

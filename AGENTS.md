@@ -7,3 +7,5 @@
 - 服务只校验、鉴权、落库和查询；看板只展示。不抓行情、不计算指标、不执行交易、不加建议字段。
 - 目前范围仅 P0/P1 地基。禁止部署，禁止修改 Cloudflare 账号及无关项目。
 - 提交前运行 npm run lint 和 npm test；保留 PROTOCOL.md 原文。
+
+- 非代码操作完成后，遵守 [DELIVERY.md 的交付日志规则](docs/DELIVERY.md#交付日志规则)，追加脱敏记录并提交 push。
